@@ -46,14 +46,25 @@ export default function Navbar({
         </Link>
 
         <div className="hidden max-w-md flex-1 sm:block">
-          <div className="relative">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const form = e.currentTarget;
+              const input = (form.elements.namedItem("search") as HTMLInputElement)?.value;
+              if (input !== undefined) {
+                router.push(`/?search=${encodeURIComponent(input.trim())}`);
+              }
+            }}
+            className="relative"
+          >
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
             <input
+              name="search"
               type="text"
               placeholder="Cari produk atau toko murah..."
               className="w-full rounded-full border border-[#2E2E2E] bg-[#1E1E1E] py-2 pl-10 pr-4 text-sm text-neutral-200 placeholder-neutral-500 outline-none transition duration-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
-          </div>
+          </form>
         </div>
 
         <div className="flex items-center gap-3">

@@ -1,19 +1,31 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { PackageOpen, Search } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { createClient } from "@/lib/supabase/client";
 
-export default function HomePage({
+function HomePageContent({
   rawCategories: initialCategories = [],
   rawProducts: initialProducts = [],
 }: any) {
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get("search") || searchParams.get("q") || "";
+
   const [rawCategories, setRawCategories] = useState<any[]>(initialCategories);
   const [rawProducts, setRawProducts] = useState<any[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
+  const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [isLoading, setIsLoading] = useState(
     initialCategories.length === 0 && initialProducts.length === 0
   );
+
+  useEffect(() => {
+    if (urlSearch) {
+      setSearchQuery(urlSearch);
+    }
+  }, [urlSearch]);
 
   useEffect(() => {
     // Jika data awal sudah ada (misal dari SSR atau props), pakai langsung
@@ -24,7 +36,6 @@ export default function HomePage({
       return;
     }
 
-    // Ambil data langsung dari Supabase saat render di client
     const supabase = createClient();
     async function loadData() {
       try {
@@ -58,6 +69,8 @@ export default function HomePage({
             store_id: String(p.store_id || ""),
           }));
           setRawProducts(formatted);
+        } else {
+          setRawProducts([]);
         }
       } catch (err) {
         console.error("Gagal memuat data dari Supabase:", err);
@@ -75,9 +88,20 @@ export default function HomePage({
   }, [rawCategories]);
 
   const filteredProducts = useMemo(() => {
-    if (selectedCategory === "Semua") return rawProducts;
-    return rawProducts.filter((p: any) => p.category === selectedCategory);
-  }, [selectedCategory, rawProducts]);
+    let result = rawProducts;
+    if (selectedCategory !== "Semua") {
+      result = result.filter((p: any) => p.category === selectedCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (p: any) =>
+          p.name?.toLowerCase().includes(q) ||
+          p.category?.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [selectedCategory, searchQuery, rawProducts]);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -141,29 +165,74 @@ export default function HomePage({
         </div>
       </section>
 
-      {/* Produk Grid */}
+      {/* Produk Grid / Empty State */}
       <section>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white">Produk Terbaru</h2>
-          <span className="text-xs text-neutral-400">
-            Menampilkan {filteredProducts.length} produk
-          </span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-white">Produk Terbaru</h2>
+            <p className="text-xs text-neutral-400 mt-1">
+              Menampilkan {filteredProducts.length} produk
+            </p>
+          </div>
+
+          {/* Search Bar Cepat */}
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari nama atau kategori..."
+              className="w-full rounded-xl border border-[#2E2E2E] bg-[#1E1E1E] py-2 pl-10 pr-8 text-xs text-neutral-200 placeholder-neutral-500 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white text-xs"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
+        {/* State 1: Sedang memuat */}
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 animate-pulse">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-              <div
-                key={i}
-                className="h-72 rounded-2xl bg-[#1E1E1E] border border-[#2E2E2E]"
-              />
-            ))}
+          <div className="flex flex-col items-center justify-center rounded-3xl border border-[#2E2E2E] bg-[#1E1E1E] px-6 py-16 text-center shadow-xl">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent mb-3" />
+            <p className="text-sm font-medium text-neutral-400">Memuat data produk...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="rounded-2xl border border-[#2E2E2E] bg-[#1E1E1E] p-12 text-center text-neutral-400">
-            Belum ada produk yang tersedia di kategori ini.
+          /* State 2: Produk 0 (Empty State Bersih & Rapi - DILARANG kotak skeleton kosong) */
+          <div className="flex flex-col items-center justify-center rounded-3xl border border-[#2E2E2E] bg-[#1E1E1E] px-6 py-16 text-center shadow-xl">
+            <div className="relative mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#121212] to-[#252525] border border-[#2E2E2E] shadow-inner">
+              <div className="absolute h-12 w-12 rounded-full bg-blue-500/10 blur-xl pointer-events-none" />
+              <PackageOpen className="relative h-10 w-10 text-neutral-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">
+              Belum Ada Produk
+            </h3>
+            <p className="max-w-md text-sm text-neutral-400">
+              {searchQuery
+                ? `Produk dengan kata kunci "${searchQuery}" tidak ditemukan.`
+                : selectedCategory !== "Semua"
+                ? `Produk dalam kategori "${selectedCategory}" belum tersedia.`
+                : "Produk dalam kategori ini belum tersedia."}
+            </p>
+            {(selectedCategory !== "Semua" || searchQuery) && (
+              <button
+                onClick={() => {
+                  setSelectedCategory("Semua");
+                  setSearchQuery("");
+                }}
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500 transition"
+              >
+                Lihat Semua Produk
+              </button>
+            )}
           </div>
         ) : (
+          /* State 3: Daftar Produk */
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {filteredProducts.map((product: any) => (
               <ProductCard key={product.id} product={product} />
@@ -172,5 +241,13 @@ export default function HomePage({
         )}
       </section>
     </main>
+  );
+}
+
+export default function HomePage(props: any) {
+  return (
+    <Suspense fallback={null}>
+      <HomePageContent {...props} />
+    </Suspense>
   );
 }
