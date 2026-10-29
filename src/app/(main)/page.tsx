@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { PackageOpen, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { createClient } from "@/lib/supabase/client";
 
@@ -17,9 +17,7 @@ function HomePageContent({
   const [rawProducts, setRawProducts] = useState<any[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState(urlSearch);
-  const [isLoading, setIsLoading] = useState(
-    initialCategories.length === 0 && initialProducts.length === 0
-  );
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (urlSearch) {
@@ -37,17 +35,11 @@ function HomePageContent({
     }
 
     let isMounted = true;
-    // Garansi batas maksimal loading 1.5 detik agar TIDAK PERNAH terjadi spinner muter-muter tanpa henti
-    const timeout = setTimeout(() => {
-      if (isMounted) setIsLoading(false);
-    }, 1500);
 
-    const supabase = createClient();
-    async function loadData() {
+    async function fetchProducts() {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-
-        // Ambil Kategori & Produk secara paralel dengan cepat
+        const supabase = createClient();
         const [catsRes, prodsRes] = await Promise.all([
           supabase.from("categories").select("id, name").order("name"),
           supabase
@@ -78,20 +70,21 @@ function HomePageContent({
           }
         }
       } catch (err) {
-        console.error("Gagal memuat data dari Supabase:", err);
+        console.error("Gagal memuat produk dari Supabase:", err);
+        if (isMounted) {
+          setRawProducts([]);
+        }
       } finally {
         if (isMounted) {
           setIsLoading(false);
-          clearTimeout(timeout);
         }
       }
     }
 
-    loadData();
+    fetchProducts();
 
     return () => {
       isMounted = false;
-      clearTimeout(timeout);
     };
   }, [initialCategories, initialProducts]);
 
@@ -184,7 +177,7 @@ function HomePageContent({
           <div>
             <h2 className="text-xl font-bold text-white">Produk Terbaru</h2>
             <p className="text-xs text-neutral-400 mt-1">
-              Menampilkan {filteredProducts.length} produk
+              {isLoading ? "Memuat data produk..." : `Menampilkan ${filteredProducts.length} produk`}
             </p>
           </div>
 
@@ -209,22 +202,19 @@ function HomePageContent({
           </div>
         </div>
 
-        {/* State 1: JIKA isLoading === true: Tampilkan indikator loading sementara */}
+        {/* State 1: JIKA isLoading === true: Tampilkan 'Memuat data produk...' */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center rounded-3xl border border-[#2E2E2E] bg-[#1E1E1E] px-6 py-16 text-center shadow-xl">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent mb-3" />
             <p className="text-sm font-medium text-neutral-400">Memuat data produk...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          /* State 2: JIKA isLoading === false DAN products.length === 0: HENTIKAN spinner/skeleton & TAMPILKAN "Tidak ada produk" */
-          <div className="flex flex-col items-center justify-center rounded-3xl border border-[#2E2E2E] bg-[#1E1E1E] px-6 py-16 text-center shadow-xl">
-            <div className="relative mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#121212] to-[#252525] border border-[#2E2E2E] shadow-inner">
-              <PackageOpen className="relative h-10 w-10 text-neutral-400" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">
+          /* State 2: JIKA isLoading === false DAN products.length === 0: HAPUS TOTAL spinner & TAMPILKAN TEKS SEDERHANA 'Tidak ada produk' */
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-[#2E2E2E] bg-[#1E1E1E] p-12 text-center shadow-lg">
+            <p className="text-xl font-bold text-neutral-200 mb-1">
               Tidak ada produk
-            </h3>
-            <p className="max-w-md text-sm text-neutral-400">
+            </p>
+            <p className="max-w-md text-xs text-neutral-400">
               {searchQuery
                 ? `Tidak ada produk dengan kata kunci "${searchQuery}".`
                 : selectedCategory !== "Semua"
@@ -237,14 +227,14 @@ function HomePageContent({
                   setSelectedCategory("Semua");
                   setSearchQuery("");
                 }}
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500 transition"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500 transition"
               >
                 Lihat Semua Produk
               </button>
             )}
           </div>
         ) : (
-          /* State 3: JIKA products.length > 0: Tampilkan Grid Produk Asli */
+          /* State 3: JIKA isLoading === false DAN products.length > 0: Tampilkan Grid Produk */
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {filteredProducts.map((product: any) => (
               <ProductCard key={product.id} product={product} />
