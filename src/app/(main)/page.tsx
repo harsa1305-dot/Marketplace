@@ -6,18 +6,15 @@ import { Search } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { createClient } from "@/lib/supabase/client";
 
-function HomePageContent({
-  rawCategories: initialCategories = [],
-  rawProducts: initialProducts = [],
-}: any) {
+function HomePageContent() {
   const searchParams = useSearchParams();
   const urlSearch = searchParams.get("search") || searchParams.get("q") || "";
 
-  const [rawCategories, setRawCategories] = useState<any[]>(initialCategories);
-  const [rawProducts, setRawProducts] = useState<any[]>(initialProducts);
+  const [rawCategories, setRawCategories] = useState<any[]>([]);
+  const [rawProducts, setRawProducts] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState(urlSearch);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (urlSearch) {
@@ -26,67 +23,52 @@ function HomePageContent({
   }, [urlSearch]);
 
   useEffect(() => {
-    // Jika data awal sudah ada (misal dari SSR atau props), pakai langsung
-    if (initialProducts.length > 0 || initialCategories.length > 0) {
-      setRawProducts(initialProducts);
-      setRawCategories(initialCategories);
-      setIsLoading(false);
-      return;
-    }
-
-    let isMounted = true;
+    const supabase = createClient();
 
     async function fetchProducts() {
-      setIsLoading(true);
       try {
-        const supabase = createClient();
-        const [catsRes, prodsRes] = await Promise.all([
-          supabase.from("categories").select("id, name").order("name"),
-          supabase
-            .from("products")
-            .select("id, name, price, image, stock, store_id, category_id, categories(id, name), stores(name)")
-            .eq("is_active", true)
-            .order("created_at", { ascending: false }),
-        ]);
+        setIsLoading(true);
 
-        if (isMounted) {
-          if (catsRes.data && catsRes.data.length > 0) {
-            setRawCategories(catsRes.data);
-          }
+        // 1. Ambil daftar kategori
+        const { data: catsData } = await supabase
+          .from("categories")
+          .select("id, name")
+          .order("name");
 
-          if (prodsRes.data && prodsRes.data.length > 0) {
-            const formatted = prodsRes.data.map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              price: Number(p.price) || 0,
-              stock: Number(p.stock) || 0,
-              category: p.categories?.name || "Umum",
-              image_url: p.image || "",
-              store_id: String(p.store_id || ""),
-            }));
-            setRawProducts(formatted);
-          } else {
-            setRawProducts([]);
-          }
+        if (catsData && catsData.length > 0) {
+          setRawCategories(catsData);
         }
+
+        // 2. Ambil data produk
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .eq("is_active", true);
+
+        if (error) throw error;
+
+        const formatted = (data || []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          price: Number(p.price) || 0,
+          stock: Number(p.stock) || 0,
+          category_id: p.category_id,
+          category: p.category || "",
+          image_url: p.image || "",
+          store_id: String(p.store_id || ""),
+        }));
+
+        setRawProducts(formatted);
       } catch (err) {
-        console.error("Gagal memuat produk dari Supabase:", err);
-        if (isMounted) {
-          setRawProducts([]);
-        }
+        console.error("Error fetching products:", err);
+        setRawProducts([]);
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        setIsLoading(false); // WAJIB! MATIKAN LOADING DALAM KONDISI APA PUN!
       }
     }
 
     fetchProducts();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [initialCategories, initialProducts]);
+  }, []);
 
   const uniqueCategories = useMemo(() => {
     const categories = rawCategories.map((c: any) => c.name || c);
@@ -96,18 +78,24 @@ function HomePageContent({
   const filteredProducts = useMemo(() => {
     let result = rawProducts;
     if (selectedCategory !== "Semua") {
-      result = result.filter((p: any) => p.category === selectedCategory);
+      const selectedCatObj = rawCategories.find(
+        (c: any) => (c.name || c) === selectedCategory
+      );
+      const selectedCatId = selectedCatObj?.id;
+      result = result.filter(
+        (p: any) =>
+          p.category === selectedCategory ||
+          (selectedCatId && p.category_id === selectedCatId)
+      );
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      result = result.filter(
-        (p: any) =>
-          p.name?.toLowerCase().includes(q) ||
-          p.category?.toLowerCase().includes(q)
+      result = result.filter((p: any) =>
+        p.name?.toLowerCase().includes(q)
       );
     }
     return result;
-  }, [selectedCategory, searchQuery, rawProducts]);
+  }, [selectedCategory, searchQuery, rawProducts, rawCategories]);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -188,7 +176,7 @@ function HomePageContent({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari nama atau kategori..."
+              placeholder="Cari nama produk..."
               className="w-full rounded-xl border border-[#2E2E2E] bg-[#1E1E1E] py-2 pl-10 pr-8 text-xs text-neutral-200 placeholder-neutral-500 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
             {searchQuery && (
@@ -202,24 +190,24 @@ function HomePageContent({
           </div>
         </div>
 
-        {/* State 1: JIKA isLoading === true: Tampilkan 'Memuat data produk...' */}
+        {/* 1. JIKA isLoading === true: Tampilkan 'Memuat data produk...' */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center rounded-3xl border border-[#2E2E2E] bg-[#1E1E1E] px-6 py-16 text-center shadow-xl">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent mb-3" />
             <p className="text-sm font-medium text-neutral-400">Memuat data produk...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          /* State 2: JIKA isLoading === false DAN products.length === 0: HAPUS TOTAL spinner & TAMPILKAN TEKS SEDERHANA 'Tidak ada produk' */
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-[#2E2E2E] bg-[#1E1E1E] p-12 text-center shadow-lg">
+          /* 2. JIKA isLoading === false DAN products.length === 0: HAPUS SPINNER & RENDER TEKS SEDERHANA 'Tidak ada produk' */
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-[#2E2E2E] bg-[#1E1E1E] py-16 px-4 text-center shadow-lg">
             <p className="text-xl font-bold text-neutral-200 mb-1">
               Tidak ada produk
             </p>
-            <p className="max-w-md text-xs text-neutral-400">
+            <p className="text-xs text-neutral-400 max-w-md">
               {searchQuery
                 ? `Tidak ada produk dengan kata kunci "${searchQuery}".`
                 : selectedCategory !== "Semua"
                 ? `Tidak ada produk dalam kategori "${selectedCategory}".`
-                : "Tidak ada produk yang tersedia saat ini."}
+                : "Belum ada produk yang dijual saat ini."}
             </p>
             {(selectedCategory !== "Semua" || searchQuery) && (
               <button
@@ -234,7 +222,7 @@ function HomePageContent({
             )}
           </div>
         ) : (
-          /* State 3: JIKA isLoading === false DAN products.length > 0: Tampilkan Grid Produk */
+          /* 3. JIKA isLoading === false DAN products.length > 0: Render grid produk */
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {filteredProducts.map((product: any) => (
               <ProductCard key={product.id} product={product} />
@@ -246,10 +234,10 @@ function HomePageContent({
   );
 }
 
-export default function HomePage(props: any) {
+export default function HomePage() {
   return (
     <Suspense fallback={null}>
-      <HomePageContent {...props} />
+      <HomePageContent />
     </Suspense>
   );
 }
