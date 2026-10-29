@@ -36,50 +36,63 @@ function HomePageContent({
       return;
     }
 
+    let isMounted = true;
+    // Garansi batas maksimal loading 1.5 detik agar TIDAK PERNAH terjadi spinner muter-muter tanpa henti
+    const timeout = setTimeout(() => {
+      if (isMounted) setIsLoading(false);
+    }, 1500);
+
     const supabase = createClient();
     async function loadData() {
       try {
         setIsLoading(true);
 
-        // 1. Ambil Kategori dari Supabase
-        const { data: cats } = await supabase
-          .from("categories")
-          .select("id, name")
-          .order("name");
+        // Ambil Kategori & Produk secara paralel dengan cepat
+        const [catsRes, prodsRes] = await Promise.all([
+          supabase.from("categories").select("id, name").order("name"),
+          supabase
+            .from("products")
+            .select("id, name, price, image, stock, store_id, category_id, categories(id, name), stores(name)")
+            .eq("is_active", true)
+            .order("created_at", { ascending: false }),
+        ]);
 
-        if (cats && cats.length > 0) {
-          setRawCategories(cats);
-        }
+        if (isMounted) {
+          if (catsRes.data && catsRes.data.length > 0) {
+            setRawCategories(catsRes.data);
+          }
 
-        // 2. Ambil Produk Aktif dari Supabase
-        const { data: prods } = await supabase
-          .from("products")
-          .select("id, name, price, image, stock, store_id, category_id, categories(id, name), stores(name)")
-          .eq("is_active", true)
-          .order("created_at", { ascending: false });
-
-        if (prods && prods.length > 0) {
-          const formatted = prods.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            price: Number(p.price) || 0,
-            stock: Number(p.stock) || 0,
-            category: p.categories?.name || "Umum",
-            image_url: p.image || "",
-            store_id: String(p.store_id || ""),
-          }));
-          setRawProducts(formatted);
-        } else {
-          setRawProducts([]);
+          if (prodsRes.data && prodsRes.data.length > 0) {
+            const formatted = prodsRes.data.map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              price: Number(p.price) || 0,
+              stock: Number(p.stock) || 0,
+              category: p.categories?.name || "Umum",
+              image_url: p.image || "",
+              store_id: String(p.store_id || ""),
+            }));
+            setRawProducts(formatted);
+          } else {
+            setRawProducts([]);
+          }
         }
       } catch (err) {
         console.error("Gagal memuat data dari Supabase:", err);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          clearTimeout(timeout);
+        }
       }
     }
 
     loadData();
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeout);
+    };
   }, [initialCategories, initialProducts]);
 
   const uniqueCategories = useMemo(() => {
@@ -196,28 +209,27 @@ function HomePageContent({
           </div>
         </div>
 
-        {/* State 1: Sedang memuat */}
+        {/* State 1: JIKA isLoading === true: Tampilkan indikator loading sementara */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center rounded-3xl border border-[#2E2E2E] bg-[#1E1E1E] px-6 py-16 text-center shadow-xl">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent mb-3" />
             <p className="text-sm font-medium text-neutral-400">Memuat data produk...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          /* State 2: Produk 0 (Empty State Bersih & Rapi - DILARANG kotak skeleton kosong) */
+          /* State 2: JIKA isLoading === false DAN products.length === 0: HENTIKAN spinner/skeleton & TAMPILKAN "Tidak ada produk" */
           <div className="flex flex-col items-center justify-center rounded-3xl border border-[#2E2E2E] bg-[#1E1E1E] px-6 py-16 text-center shadow-xl">
             <div className="relative mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#121212] to-[#252525] border border-[#2E2E2E] shadow-inner">
-              <div className="absolute h-12 w-12 rounded-full bg-blue-500/10 blur-xl pointer-events-none" />
               <PackageOpen className="relative h-10 w-10 text-neutral-400" />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">
-              Belum Ada Produk
+              Tidak ada produk
             </h3>
             <p className="max-w-md text-sm text-neutral-400">
               {searchQuery
-                ? `Produk dengan kata kunci "${searchQuery}" tidak ditemukan.`
+                ? `Tidak ada produk dengan kata kunci "${searchQuery}".`
                 : selectedCategory !== "Semua"
-                ? `Produk dalam kategori "${selectedCategory}" belum tersedia.`
-                : "Produk dalam kategori ini belum tersedia."}
+                ? `Tidak ada produk dalam kategori "${selectedCategory}".`
+                : "Tidak ada produk yang tersedia saat ini."}
             </p>
             {(selectedCategory !== "Semua" || searchQuery) && (
               <button
@@ -232,7 +244,7 @@ function HomePageContent({
             )}
           </div>
         ) : (
-          /* State 3: Daftar Produk */
+          /* State 3: JIKA products.length > 0: Tampilkan Grid Produk Asli */
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {filteredProducts.map((product: any) => (
               <ProductCard key={product.id} product={product} />
