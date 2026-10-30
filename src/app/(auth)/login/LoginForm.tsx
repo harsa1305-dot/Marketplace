@@ -282,6 +282,16 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
               {resendMsg}
             </p>
           )}
+
+          {/* Edukasi Spam Email */}
+          <div className="bg-amber-950/20 border border-amber-800/40 rounded-xl p-3 text-xs text-amber-400 text-left space-y-1">
+            <p className="font-semibold">
+              💡 Kode OTP tidak muncul di Kotak Masuk?
+            </p>
+            <p className="text-[11px] text-amber-400/90 leading-relaxed">
+              Cek folder <strong>Spam</strong> atau <strong>Promosi</strong> di Gmail Anda. Jika ditemukan di Spam, buka pesan lalu klik <em>"Bukan Spam"</em> agar email berikutnya dari COD-In masuk ke Inbox utama.
+            </p>
+          </div>
         </form>
 
         <div className="pt-1">

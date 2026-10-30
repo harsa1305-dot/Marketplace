@@ -270,12 +270,13 @@ export default function RegisterForm() {
           {resendMsg && <p className="text-[11px] text-emerald-400 font-medium">{resendMsg}</p>}
         </form>
 
+        {/* Edukasi Spam Email */}
         <div className="bg-amber-950/20 border border-amber-800/40 rounded-xl p-3 text-xs text-amber-400 text-left space-y-1">
-          <p>
-            💡 <strong>Opsi Lain:</strong> Anda juga bisa langsung mengklik tombol/tautan konfirmasi yang ada di dalam pesan email Anda.
+          <p className="font-semibold">
+            💡 Kode OTP tidak muncul di Kotak Masuk?
           </p>
-          <p className="text-[11px] text-amber-400/80">
-            Periksa juga folder <em>Spam</em> atau <em>Promotions</em> jika email belum muncul di kotak masuk utama.
+          <p className="text-[11px] text-amber-400/90 leading-relaxed">
+            Cek folder <strong>Spam</strong> atau <strong>Promosi</strong> di Gmail Anda. Jika ditemukan di Spam, buka pesan lalu klik <em>"Bukan Spam"</em> agar email berikutnya dari COD-In masuk ke Inbox utama.
           </p>
         </div>
 

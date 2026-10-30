@@ -291,11 +291,14 @@ export default function ForgotPasswordForm() {
           </form>
 
           <div className="bg-amber-950/20 border border-amber-800/40 rounded-xl p-3 text-xs text-amber-400 text-left space-y-1">
-            <p>
-              💡 <strong>Opsi Lain:</strong> Anda juga bisa langsung mengklik tombol tautan pembaruan kata sandi di dalam pesan email yang Anda terima.
+            <p className="font-semibold">
+              💡 Kode OTP tidak muncul di Kotak Masuk?
+            </p>
+            <p className="text-[11px] text-amber-400/90 leading-relaxed">
+              Cek folder <strong>Spam</strong> atau <strong>Promosi</strong> di Gmail Anda. Jika ditemukan di Spam, buka pesan lalu klik <em>"Bukan Spam"</em> agar email berikutnya dari COD-In masuk ke Inbox utama.
             </p>
             <p className="text-[11px] text-amber-400/80">
-              Cek juga folder <em>Spam</em> atau <em>Promotions</em> jika pesan belum terlihat di kotak masuk utama.
+              Anda juga bisa langsung mengklik tombol tautan pembaruan kata sandi di dalam pesan email yang Anda terima.
             </p>
           </div>
 
