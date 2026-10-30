@@ -41,6 +41,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
+      <head>
+        <link rel="canonical" href="https://codin.web.id" />
+      </head>
       <body>{children}</body>
     </html>
   )
