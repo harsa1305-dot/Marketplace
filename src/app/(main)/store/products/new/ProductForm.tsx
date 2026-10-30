@@ -59,18 +59,37 @@ export default function ProductForm({ storeId, categories, defaultValues }: Prop
     setUploading(true)
     setError(null)
 
-    const ext      = file.name.split('.').pop()
-    const fileName = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    try {
+      // 1. Pastikan sesi login aktif sebelum upload
+      const { data: { session }, error: sessionErr } = await supabase.auth.getSession()
+      if (sessionErr || !session) {
+        throw new Error('Sesi login tidak ditemukan. Silakan login ulang untuk mengunggah gambar produk.')
+      }
 
-    const { data, error: uploadErr } = await supabase.storage
-      .from('product-images')
-      .upload(fileName, file, { upsert: false })
+      const ext      = file.name.split('.').pop()
+      const fileName = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
-    if (uploadErr) { setError('Gagal upload gambar: ' + uploadErr.message); setUploading(false); return }
+      const { data, error: uploadErr } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, file, { 
+          cacheControl: '3600',
+          upsert: false 
+        })
 
-    const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(data.path)
-    setImageUrl(urlData.publicUrl)
-    setUploading(false)
+      if (uploadErr) {
+        if (uploadErr.message?.toLowerCase().includes('row-level security') || uploadErr.message?.toLowerCase().includes('violates')) {
+          throw new Error('Gagal upload gambar: Izin penyimpanan ditolak (Storage RLS). Silakan jalankan script SQL RLS storage di Supabase SQL Editor.')
+        }
+        throw new Error('Gagal upload gambar: ' + uploadErr.message)
+      }
+
+      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(data.path)
+      setImageUrl(urlData.publicUrl)
+    } catch (err: any) {
+      setError(err?.message || 'Gagal mengunggah gambar produk.')
+    } finally {
+      setUploading(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {

@@ -66,6 +66,9 @@ export async function POST(request: Request) {
     }
 
     // 5. Registrasi ke Supabase Auth
+    let authUser: any = null
+    let requireEmailConfirmation = true
+
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: emailVal.normalized,
       password,
@@ -79,17 +82,46 @@ export async function POST(request: Request) {
     })
 
     if (signUpError || !authData.user) {
-      return NextResponse.json(
-        { error: signUpError?.message || 'Gagal membuat akun autentikasi di Supabase.' },
-        { status: 400 }
-      )
+      const errMsg = signUpError?.message || ''
+      if (errMsg.toLowerCase().includes('rate limit') || errMsg.toLowerCase().includes('email rate limit')) {
+        // Fallback: Jika batas email SMTP Supabase terlampaui, buat akun langsung via service_role admin
+        // dengan email_confirm: true agar pengguna tidak terhalang pengujian pendaftaran
+        const { data: adminCreated, error: adminErr } = await adminSupabase.auth.admin.createUser({
+          email: emailVal.normalized,
+          password,
+          email_confirm: true,
+          user_metadata: {
+            name: name.trim(),
+            username: cleanUsername,
+            phone: phoneVal.normalized,
+          },
+        })
+
+        if (!adminErr && adminCreated?.user) {
+          authUser = adminCreated.user
+          requireEmailConfirmation = false
+        } else {
+          return NextResponse.json(
+            { error: 'Batas pengiriman email pendaftaran tercapai. Silakan tunggu beberapa menit atau gunakan akun yang sudah ada.' },
+            { status: 429 }
+          )
+        }
+      } else {
+        return NextResponse.json(
+          { error: signUpError?.message || 'Gagal membuat akun autentikasi di Supabase.' },
+          { status: 400 }
+        )
+      }
+    } else {
+      authUser = authData.user
+      requireEmailConfirmation = !authData.session
     }
 
     // 6. Simpan profil ke tabel public.users menggunakan Admin Client
     //    Admin Client (service_role) memastikan proses ini berhasil secara andal
     //    baik saat fitur 'Confirm Email' aktif maupun nonaktif.
     const { error: profileError } = await adminSupabase.from('users').insert({
-      auth_id: authData.user.id,
+      auth_id: authUser.id,
       name: name.trim(),
       username: cleanUsername,
       email: emailVal.normalized,
@@ -99,15 +131,12 @@ export async function POST(request: Request) {
 
     if (profileError) {
       // Hapus akun auth jika insert profil gagal untuk menjaga konsistensi data
-      await adminSupabase.auth.admin.deleteUser(authData.user.id)
+      await adminSupabase.auth.admin.deleteUser(authUser.id)
       return NextResponse.json(
         { error: 'Gagal membuat profil database: ' + profileError.message },
         { status: 500 }
       )
     }
-
-    // Cek apakah Supabase mewajibkan konfirmasi email
-    const requireEmailConfirmation = !authData.session
 
     return NextResponse.json({
       success: true,

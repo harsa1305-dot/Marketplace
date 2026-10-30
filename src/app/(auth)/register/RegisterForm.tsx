@@ -109,7 +109,12 @@ export default function RegisterForm() {
         router.push('/login?registered=1')
       }
     } catch (err: any) {
-      setError(err?.message || 'Terjadi kesalahan saat mendaftar.')
+      const msg = err?.message || ''
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('email rate limit')) {
+        setError('Batas pengiriman email pendaftaran tercapai. Silakan tunggu beberapa menit atau gunakan akun yang sudah ada.')
+      } else {
+        setError(msg || 'Terjadi kesalahan saat mendaftar.')
+      }
     } finally {
       setLoading(false)
     }
@@ -165,7 +170,12 @@ export default function RegisterForm() {
       setResendMsg('✅ Kode OTP / tautan baru berhasil dikirimkan ke email kamu!')
       setTimeout(() => setResendMsg(null), 5000)
     } catch (err: any) {
-      setOtpError(err?.message || 'Gagal mengirim ulang email verifikasi.')
+      const msg = err?.message || ''
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('email rate limit')) {
+        setOtpError('Batas pengiriman email pendaftaran tercapai. Silakan tunggu beberapa menit atau gunakan akun yang sudah ada.')
+      } else {
+        setOtpError(msg || 'Gagal mengirim ulang email verifikasi.')
+      }
     } finally {
       setResending(false)
     }
