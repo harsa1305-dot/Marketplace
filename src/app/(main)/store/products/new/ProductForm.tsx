@@ -54,7 +54,13 @@ export default function ProductForm({ storeId, categories, defaultValues }: Prop
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) { setError('Ukuran gambar maksimal 2MB'); return }
+
+    // Batas ukuran berkas maksimal 100MB
+    const MAX_SIZE = 100 * 1024 * 1024
+    if (file.size > MAX_SIZE) {
+      setError('Ukuran gambar melebihi batas maksimal 100MB. Silakan pilih gambar yang lebih kecil.')
+      return
+    }
 
     setUploading(true)
     setError(null)
@@ -66,19 +72,23 @@ export default function ProductForm({ storeId, categories, defaultValues }: Prop
         throw new Error('Sesi login tidak ditemukan. Silakan login ulang untuk mengunggah gambar produk.')
       }
 
-      const ext      = file.name.split('.').pop()
+      const ext      = file.name.split('.').pop()?.toLowerCase() || 'jpg'
       const fileName = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
+      // 2. Direct Client Upload langsung dari browser ke Supabase Storage (Bypass limit 4.5MB Serverless)
       const { data, error: uploadErr } = await supabase.storage
         .from('product-images')
         .upload(fileName, file, { 
           cacheControl: '3600',
-          upsert: false 
+          upsert: true 
         })
 
       if (uploadErr) {
         if (uploadErr.message?.toLowerCase().includes('row-level security') || uploadErr.message?.toLowerCase().includes('violates')) {
           throw new Error('Gagal upload gambar: Izin penyimpanan ditolak (Storage RLS). Silakan jalankan script SQL RLS storage di Supabase SQL Editor.')
+        }
+        if (uploadErr.message?.toLowerCase().includes('entity too large') || (uploadErr as any).statusCode === '413') {
+          throw new Error('Gagal upload gambar: Ukuran berkas melebihi batas maksimal bucket (100MB).')
         }
         throw new Error('Gagal upload gambar: ' + uploadErr.message)
       }
@@ -86,7 +96,12 @@ export default function ProductForm({ storeId, categories, defaultValues }: Prop
       const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(data.path)
       setImageUrl(urlData.publicUrl)
     } catch (err: any) {
-      setError(err?.message || 'Gagal mengunggah gambar produk.')
+      console.error('Image upload error:', err)
+      if (err?.message === 'Failed to fetch' || err?.name === 'TypeError') {
+        setError('Gagal upload gambar: Koneksi internet terputus atau batas ukuran upload terlampaui. Pastikan koneksi stabil dan coba lagi.')
+      } else {
+        setError(err?.message || 'Gagal mengunggah gambar produk.')
+      }
     } finally {
       setUploading(false)
     }
@@ -156,7 +171,7 @@ export default function ProductForm({ storeId, categories, defaultValues }: Prop
               disabled={uploading}
               className="text-sm text-neutral-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-blue-600/10 file:text-blue-400 hover:file:bg-blue-600/20 cursor-pointer" />
             <p className="text-xs text-neutral-400 mt-2">
-              {uploading ? '⏳ Mengupload...' : 'Format: JPG, PNG, WEBP. Maks 2MB.'}
+              {uploading ? '⏳ Mengupload gambar...' : 'Format: JPG, PNG, WEBP. Maks 100MB.'}
             </p>
           </div>
         </div>

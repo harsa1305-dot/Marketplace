@@ -325,8 +325,13 @@ END $$;
 -- ── STEP 14: Pengurangan Stok Otomatis saat Pesanan Dibuat ─────
 -- Trigger otomatis memotong stok produk saat order_items diinsert.
 -- Mencegah race condition dengan FOR UPDATE locking.
+-- Menggunakan SECURITY DEFINER agar buyer bisa memotong stok produk milik toko lain secara sah.
 CREATE OR REPLACE FUNCTION public.decrease_product_stock_on_order()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   current_stock INT;
 BEGIN
@@ -352,7 +357,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DROP TRIGGER IF EXISTS trg_decrease_product_stock ON public.order_items;
 CREATE TRIGGER trg_decrease_product_stock
@@ -364,8 +369,13 @@ EXECUTE FUNCTION public.decrease_product_stock_on_order();
 -- ── STEP 15: Pengembalian Stok saat Pesanan Dibatalkan ─────────
 -- Jika pesanan berstatus cancelled, kembalikan stok produk.
 -- Jika pesanan batal diaktifkan kembali, potong kembali stoknya.
+-- Menggunakan SECURITY DEFINER agar sinkronisasi stok berjalan mulus.
 CREATE OR REPLACE FUNCTION public.handle_order_status_stock_sync()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   item RECORD;
 BEGIN
@@ -391,7 +401,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DROP TRIGGER IF EXISTS trg_order_status_stock_sync ON public.orders;
 CREATE TRIGGER trg_order_status_stock_sync

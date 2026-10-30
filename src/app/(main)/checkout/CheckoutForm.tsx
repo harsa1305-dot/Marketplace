@@ -8,6 +8,7 @@ interface CartItem {
   quantity: number
   products: {
     id: number
+    name?: string
     price: number
     store_id: number
     stores: { id: number; name: string }
@@ -33,7 +34,8 @@ export default function CheckoutForm({ userId, cartItems, total, defaultName, de
 
   // Kelompokkan item berdasarkan toko
   const storeGroups = cartItems.reduce((acc: Record<number, CartItem[]>, item) => {
-    const storeId = item.products.stores.id
+    const storeId = Number(item.products?.stores?.id || item.products?.store_id)
+    if (!storeId) return acc
     if (!acc[storeId]) acc[storeId] = []
     acc[storeId].push(item)
     return acc
@@ -47,19 +49,33 @@ export default function CheckoutForm({ userId, cartItems, total, defaultName, de
     setError(null)
 
     try {
-      // 0. Validasi ketersediaan stok produk terkini sebelum membuat pesanan
-      const productIds = cartItems.map((i) => i.products.id)
+      // 0. Validasi ketersediaan produk dan stok terkini secara langsung sebelum transaksi
+      const productIds = cartItems
+        .map((i) => Number(i.products?.id))
+        .filter((id) => !isNaN(id) && id > 0)
+
+      if (productIds.length === 0) {
+        throw new Error('Produk dalam keranjang tidak valid atau tidak ditemukan.')
+      }
+
       const { data: latestProducts, error: pErr } = await supabase
         .from('products')
         .select('id, name, stock, is_active')
         .in('id', productIds)
 
-      if (pErr) throw new Error('Gagal memeriksa ketersediaan stok produk.')
+      if (pErr) {
+        console.error('Error fetching latest products:', pErr)
+        throw new Error('Gagal memeriksa ketersediaan produk: ' + pErr.message)
+      }
 
       for (const item of cartItems) {
-        const p = latestProducts?.find((prod: any) => prod.id === item.products.id)
-        if (!p || !p.is_active) {
-          throw new Error(`Produk "${item.products.id}" sudah tidak aktif atau tidak tersedia.`)
+        const prodId = Number(item.products?.id)
+        const p = latestProducts?.find((prod: any) => Number(prod.id) === prodId)
+        if (!p) {
+          throw new Error(`Produk "${item.products?.name || prodId}" tidak ditemukan di sistem.`)
+        }
+        if (!p.is_active) {
+          throw new Error(`Produk "${p.name}" sedang tidak aktif atau dinonaktifkan oleh penjual.`)
         }
         if (p.stock <= 0) {
           throw new Error(`Maaf, produk "${p.name}" telah Sold Out (Stok Habis). Silakan hapus dari keranjang.`)
@@ -74,34 +90,40 @@ export default function CheckoutForm({ userId, cartItems, total, defaultName, de
       // Buat order per toko (sesuai alur marketplace)
       for (const [storeIdStr, items] of Object.entries(storeGroups)) {
         const storeId = Number(storeIdStr)
-        const storeTotal = items.reduce((s, i) => s + i.products.price * i.quantity, 0)
+        const storeTotal = items.reduce((s, i) => s + Number(i.products.price) * Number(i.quantity), 0)
 
         // 1. Insert order
         const { data: order, error: orderErr } = await supabase
           .from('orders')
           .insert({
-            buyer_id:         userId,
+            buyer_id:         Number(userId),
             store_id:         storeId,
             total_price:      storeTotal,
             status:           'pending' as const,
-            shipping_address: address,
+            shipping_address: address.trim(),
             payment_method:   'cod',
-            notes:            notes || null,
+            notes:            notes?.trim() || null,
           })
           .select('id')
           .single()
 
-        if (orderErr || !order) throw new Error(orderErr?.message ?? 'Gagal membuat pesanan')
+        if (orderErr || !order) {
+          console.error('Order creation error:', orderErr)
+          throw new Error(orderErr?.message ?? 'Gagal membuat pesanan')
+        }
 
         // 2. Insert order items
         const orderItems = items.map(i => ({
-          order_id:   order.id,
-          product_id: i.products.id,
-          quantity:   i.quantity,
-          price:      i.products.price,
+          order_id:   Number(order.id),
+          product_id: Number(i.products.id),
+          quantity:   Number(i.quantity),
+          price:      Number(i.products.price),
         }))
         const { error: itemsErr } = await supabase.from('order_items').insert(orderItems)
-        if (itemsErr) throw new Error(itemsErr.message)
+        if (itemsErr) {
+          console.error('Order items insertion error:', itemsErr)
+          throw new Error(itemsErr.message)
+        }
       }
 
       // 3. Kosongkan keranjang

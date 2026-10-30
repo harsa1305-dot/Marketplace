@@ -39,3 +39,4 @@ FOR DELETE USING (
   bucket_id = 'product-images' 
   AND auth.role() = 'authenticated'
 );
+
