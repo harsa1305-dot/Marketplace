@@ -69,10 +69,16 @@ export async function POST(request: Request) {
     let authUser: any = null
     let requireEmailConfirmation = true
 
+    // URL callback yang benar — wajib mengarah ke domain aplikasi kita, bukan vercel.com
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+      || process.env.NEXT_PUBLIC_APP_URL
+      || 'https://marketplace-beta-lyart.vercel.app'
+
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: emailVal.normalized,
       password,
       options: {
+        emailRedirectTo: `${siteUrl}/api/auth/callback`,
         data: {
           name: name.trim(),
           username: cleanUsername,

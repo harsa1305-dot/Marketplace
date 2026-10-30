@@ -69,8 +69,12 @@ export async function POST(request: Request) {
     }
 
     // 3. Tentukan URL redirect setelah klik link di email
-    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const redirectUrl = `${origin}/api/auth/callback?next=/reset-password`
+    // Prioritaskan env var NEXT_PUBLIC_SITE_URL untuk menghindari pengalihan ke vercel.com
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+      || process.env.NEXT_PUBLIC_APP_URL
+      || process.env.VERCEL_PROJECT_PRODUCTION_URL && `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      || 'https://marketplace-beta-lyart.vercel.app'
+    const redirectUrl = `${siteUrl}/api/auth/callback?next=/reset-password`
 
     // 4. Minta Supabase Auth untuk mengirimkan token OTP / tautan reset kata sandi
     const { error: resetError } = await adminSupabase.auth.resetPasswordForEmail(targetEmail, {

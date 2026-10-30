@@ -67,7 +67,12 @@ export default function ForgotPasswordForm() {
       setResendMsg('✅ Kode OTP dan tautan reset kata sandi baru telah dikirimkan ke email Anda.')
       setTimeout(() => setResendMsg(null), 5000)
     } catch (err: any) {
-      setError(err?.message || 'Terjadi kesalahan sistem.')
+      const msg = err?.message || ''
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('email rate limit')) {
+        setError('Batas pengiriman email tercapai. Silakan tunggu beberapa menit sebelum mencoba lagi, atau gunakan akun yang sudah ada.')
+      } else {
+        setError(msg || 'Terjadi kesalahan sistem.')
+      }
     } finally {
       setLoading(false)
     }

@@ -124,3 +124,4 @@ CREATE TRIGGER trg_handle_order_status_stock_sync
 AFTER UPDATE OF status ON public.orders
 FOR EACH ROW
 EXECUTE FUNCTION public.handle_order_status_stock_sync();
+
