@@ -106,7 +106,14 @@ export default function ForgotPasswordForm() {
         router.refresh()
       }, 1000)
     } catch (err: any) {
-      setOtpError(err?.message || 'Kode OTP salah atau telah kadaluwarsa (berlaku 5-10 menit). Silakan coba lagi.')
+      const msg = err?.message || ''
+      if (msg.toLowerCase().includes('token') || msg.toLowerCase().includes('expired') || msg.toLowerCase().includes('invalid')) {
+        setOtpError('Kode OTP tidak valid atau telah kedaluwarsa. Silakan minta kode baru.')
+      } else if (msg.toLowerCase().includes('rate limit')) {
+        setOtpError('Terlalu banyak percobaan. Silakan tunggu beberapa menit.')
+      } else {
+        setOtpError(msg || 'Kode OTP salah atau telah kedaluwarsa (berlaku 5-10 menit). Silakan coba lagi.')
+      }
     } finally {
       setVerifyingOtp(false)
     }
@@ -180,7 +187,7 @@ export default function ForgotPasswordForm() {
               disabled={cooldown > 0 || loading}
               className="text-blue-400 hover:underline font-semibold disabled:text-neutral-600 disabled:no-underline"
             >
-              {cooldown > 0 ? `Kirim Ulang (${cooldown}d)` : 'Kirim Ulang Kode'}
+              {cooldown > 0 ? `Kirim Ulang (${cooldown} dtk)` : 'Kirim Ulang Kode'}
             </button>
           </div>
           {resendMsg && <p className="text-[11px] text-emerald-400 font-medium">{resendMsg}</p>}

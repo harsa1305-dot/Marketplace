@@ -147,7 +147,14 @@ export default function RegisterForm() {
         router.refresh()
       }, 1500)
     } catch (err: any) {
-      setOtpError(err?.message || 'Kode OTP salah atau telah kedaluwarsa. Silakan periksa kembali email Anda.')
+      const msg = err?.message || ''
+      if (msg.toLowerCase().includes('token') || msg.toLowerCase().includes('expired') || msg.toLowerCase().includes('invalid')) {
+        setOtpError('Kode OTP tidak valid atau telah kedaluwarsa. Silakan minta kode baru.')
+      } else if (msg.toLowerCase().includes('rate limit')) {
+        setOtpError('Terlalu banyak percobaan. Silakan tunggu beberapa menit.')
+      } else {
+        setOtpError(msg || 'Kode OTP salah atau telah kedaluwarsa. Silakan periksa kembali email Anda.')
+      }
     } finally {
       setVerifyingOtp(false)
     }
@@ -213,6 +220,7 @@ export default function RegisterForm() {
               value={otpCode}
               onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
               placeholder="Contoh: 123456"
+              autoFocus
               className="flex-1 px-4 py-2.5 border border-[#2E2E2E] rounded-xl text-center text-base font-mono font-bold tracking-widest focus:outline-none focus:border-blue-500 bg-[#1E1E1E] text-neutral-100 placeholder-neutral-500"
             />
             <button
@@ -227,7 +235,7 @@ export default function RegisterForm() {
           {otpError && <p className="text-xs text-rose-400 font-medium">{otpError}</p>}
           {otpSuccess && (
             <p className="text-xs text-emerald-400 font-bold bg-emerald-950/30 p-2 rounded-lg border border-emerald-800/40">
-              ✅ Email berhasil diverifikasi! Mengalihkan ke beranda...
+              ✅ Pendaftaran akun COD-In berhasil! Mengalihkan ke beranda...
             </p>
           )}
 
@@ -358,7 +366,7 @@ export default function RegisterForm() {
       </div>
 
       {error && (
-        <div className="text-red-600 text-xs bg-red-50 p-3 rounded-xl border border-red-200">
+        <div className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 p-3 rounded-xl">
           ⚠️ {error}
         </div>
       )}
