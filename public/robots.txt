@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Sitemap: https://codin.web.id/sitemap.xml
+
