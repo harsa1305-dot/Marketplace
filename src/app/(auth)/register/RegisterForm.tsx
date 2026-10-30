@@ -141,6 +141,23 @@ export default function RegisterForm() {
 
       if (vErr) throw vErr
 
+      // Pembuatan data profil di database HANYA dilakukan setelah OTP valid
+      try {
+        await fetch('/api/auth/create-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: data.user?.id,
+            email: form.email,
+            name: form.name,
+            username: form.username,
+            phone: form.phone,
+          }),
+        })
+      } catch (pErr) {
+        console.error('Error creating profile after OTP:', pErr)
+      }
+
       setOtpSuccess(true)
       setTimeout(() => {
         router.push('/')

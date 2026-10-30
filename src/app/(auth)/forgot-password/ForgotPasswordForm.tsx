@@ -97,8 +97,8 @@ export default function ForgotPasswordForm() {
         process.env.NEXT_PUBLIC_SITE_URL ||
         process.env.NEXT_PUBLIC_APP_URL ||
         (typeof window !== 'undefined' ? window.location.origin : '') ||
-        'https://marketplace-beta-lyart.vercel.app'
-      const redirectUrl = `${siteUrl}/api/auth/callback?next=/reset-password`
+        'https://codin-lyart.vercel.app'
+      const redirectUrl = `${siteUrl}/auth/callback?next=/reset-password`
 
       // 3. Panggil Supabase Auth Reset Password
       const { data, error: resetError } = await supabase.auth.resetPasswordForEmail(resolvedEmail, {

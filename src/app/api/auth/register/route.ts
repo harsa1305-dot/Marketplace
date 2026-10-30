@@ -72,13 +72,13 @@ export async function POST(request: Request) {
     // URL callback yang benar — wajib mengarah ke domain aplikasi kita, bukan vercel.com
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
       || process.env.NEXT_PUBLIC_APP_URL
-      || 'https://marketplace-beta-lyart.vercel.app'
+      || 'https://codin-lyart.vercel.app'
 
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: emailVal.normalized,
       password,
       options: {
-        emailRedirectTo: `${siteUrl}/api/auth/callback`,
+        emailRedirectTo: `${siteUrl}/auth/callback`,
         data: {
           name: name.trim(),
           username: cleanUsername,
@@ -106,6 +106,15 @@ export async function POST(request: Request) {
         if (!adminErr && adminCreated?.user) {
           authUser = adminCreated.user
           requireEmailConfirmation = false
+          // Karena sudah email_confirm: true via admin fallback, buat profil langsung
+          await adminSupabase.from('users').insert({
+            auth_id: authUser.id,
+            name: name.trim(),
+            username: cleanUsername,
+            email: emailVal.normalized,
+            phone: phoneVal.normalized,
+            password: '-',
+          })
         } else {
           return NextResponse.json(
             { error: 'Batas pengiriman email pendaftaran tercapai. Silakan tunggu beberapa menit atau gunakan akun yang sudah ada.' },
@@ -121,34 +130,16 @@ export async function POST(request: Request) {
     } else {
       authUser = authData.user
       requireEmailConfirmation = !authData.session
-    }
-
-    // 6. Simpan profil ke tabel public.users menggunakan Admin Client
-    //    Admin Client (service_role) memastikan proses ini berhasil secara andal
-    //    baik saat fitur 'Confirm Email' aktif maupun nonaktif.
-    const { error: profileError } = await adminSupabase.from('users').insert({
-      auth_id: authUser.id,
-      name: name.trim(),
-      username: cleanUsername,
-      email: emailVal.normalized,
-      phone: phoneVal.normalized,
-      password: '-', // Autentikasi aman ditangani oleh Supabase Auth
-    })
-
-    if (profileError) {
-      // Hapus akun auth jika insert profil gagal untuk menjaga konsistensi data
-      await adminSupabase.auth.admin.deleteUser(authUser.id)
-      return NextResponse.json(
-        { error: 'Gagal membuat profil database: ' + profileError.message },
-        { status: 500 }
-      )
+      // PENTING: Jika requireEmailConfirmation = true, profil di public.users
+      // TIDAK DIBUAT di sini, melainkan HANYA setelah OTP 6-digit diverifikasi di frontend!
     }
 
     return NextResponse.json({
       success: true,
+      userId: authUser.id,
       requireEmailConfirmation,
       message: requireEmailConfirmation
-        ? 'Pendaftaran berhasil! Tautan konfirmasi telah dikirimkan ke email Anda. Silakan verifikasi email sebelum masuk.'
+        ? 'Pendaftaran akun COD-In berhasil! Kode verifikasi OTP telah dikirimkan ke email Anda.'
         : 'Pendaftaran akun berhasil!',
     })
   } catch (err: any) {
