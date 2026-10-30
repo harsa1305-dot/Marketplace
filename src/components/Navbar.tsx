@@ -37,11 +37,11 @@ export default function Navbar({
     <header className="sticky top-0 z-50 w-full border-b border-[#2E2E2E] bg-[#121212]/85 backdrop-blur-md transition-all">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-white">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25">
-            S
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25 font-black text-xs tracking-tighter">
+            COD
           </span>
-          <span className="bg-gradient-to-r from-white via-neutral-200 to-neutral-400 bg-clip-text text-transparent">
-            Skala<span className="text-blue-500">Shop</span>
+          <span className="bg-gradient-to-r from-white via-neutral-200 to-neutral-400 bg-clip-text text-transparent font-black tracking-tight">
+            COD<span className="text-blue-500">-In</span>
           </span>
         </Link>
 

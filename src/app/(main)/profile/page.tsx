@@ -82,7 +82,7 @@ export default async function ProfilePage() {
       ) : (
         <div className="bg-[#1E1E1E] border border-blue-500/30 rounded-2xl p-5 flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-white">Mulai berjualan di SkalaShop!</p>
+            <p className="text-sm font-semibold text-white">Mulai berjualan di COD-In!</p>
             <p className="text-xs text-neutral-400">Buka tokomu sekarang — 100% gratis.</p>
           </div>
           <Link href="/store" className="bg-blue-600 text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-blue-700 transition shadow-md shadow-blue-600/20">

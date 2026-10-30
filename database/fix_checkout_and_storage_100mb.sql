@@ -1,5 +1,5 @@
 -- ==============================================================================
--- SkalaShop Migration: Fix Checkout Stock Trigger & Increase Storage to 100MB
+-- COD-In / COD-In Migration: Fix Checkout Stock Trigger & Increase Storage to 100MB
 -- Jalankan skrip ini langsung di Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/zwnphrmqpxdyfdrjlnyt/sql
 -- ==============================================================================

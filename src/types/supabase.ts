@@ -1,6 +1,6 @@
 // ============================================================
 // types/supabase.ts
-// TypeScript types yang di-generate dari skema Supabase SkalaShop
+// TypeScript types yang di-generate dari skema Supabase COD-In
 // Mencerminkan seluruh tabel di supabase_migration.sql
 // ============================================================
 

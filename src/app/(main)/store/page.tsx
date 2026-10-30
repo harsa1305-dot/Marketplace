@@ -29,7 +29,7 @@ export default async function StoreDashboardPage() {
   if (!store) {
     return (
       <div className="max-w-lg mx-auto space-y-4">
-        <h1 className="text-2xl font-black text-white">🏪 Buka Toko SkalaShop</h1>
+        <h1 className="text-2xl font-black text-white">🏪 Buka Toko COD-In</h1>
         <p className="text-neutral-400 text-sm">Mulai berjualan dengan sistem khusus COD terpercaya — 100% gratis!</p>
         <CreateStoreForm userId={profile.id} />
       </div>

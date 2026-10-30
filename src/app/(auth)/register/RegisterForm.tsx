@@ -368,7 +368,7 @@ export default function RegisterForm() {
         disabled={loading}
         className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-800 disabled:text-neutral-500 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-blue-600/20 text-sm active:scale-[0.99]"
       >
-        {loading ? '⏳ Mendaftarkan Akun...' : '🚀 Buat Akun SkalaShop'}
+        {loading ? '⏳ Mendaftarkan Akun...' : '🚀 Buat Akun COD-In'}
       </button>
     </form>
   )

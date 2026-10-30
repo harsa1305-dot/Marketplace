@@ -1,5 +1,5 @@
 -- ============================================================
--- SkalaShop — RLS Policies & Database Setup (100% Idempotent)
+-- COD-In — RLS Policies & Database Setup (100% Idempotent)
 -- Jalankan di: Supabase Dashboard → SQL Editor → New Query → Run
 -- Skrip ini aman dijalankan berulang-ulang tanpa error
 -- ============================================================

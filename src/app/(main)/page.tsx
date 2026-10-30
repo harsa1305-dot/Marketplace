@@ -109,7 +109,7 @@ function HomePageContent() {
             Marketplace COD Terpercaya
           </span>
           <h1 className="mt-4 text-3xl font-black sm:text-5xl tracking-tight leading-tight">
-            Selamat Datang di SkalaShop! 🛍️
+            Selamat Datang di COD-In! 🛍️
           </h1>
           <p className="mt-3 text-sm sm:text-base text-blue-100">
             Temukan barang impian dengan transaksi Cash On Delivery yang aman dan langsung terhubung dengan penjual.

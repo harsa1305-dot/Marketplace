@@ -1,5 +1,5 @@
 -- ============================================================
--- SkalaShop — Reset Database Fresh for Production
+-- COD-In — Reset Database Fresh for Production
 -- Jalankan di: Supabase Dashboard → SQL Editor → New Query → Run
 -- PERINGATAN: Skrip ini akan mengosongkan seluruh data uji coba!
 -- ============================================================
@@ -44,6 +44,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_categories_name_idx ON public.categories (L
 
 -- ============================================================
 -- SELESAI! Database kini 100% FRESH & BERSIH siap digunakan
--- untuk produksi / live hosting resmi SkalaShop.
+-- untuk produksi / live hosting resmi COD-In.
 -- ============================================================
 

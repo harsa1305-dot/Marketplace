@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
       if (!userRow) {
         return NextResponse.json(
-          { error: 'Email ini tidak terdaftar di sistem SkalaShop.' },
+          { error: 'Email ini tidak terdaftar di sistem COD-In.' },
           { status: 404 }
         )
       }
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
 
       if (!userRow) {
         return NextResponse.json(
-          { error: 'Nomor HP ini tidak terdaftar di sistem SkalaShop.' },
+          { error: 'Nomor HP ini tidak terdaftar di sistem COD-In.' },
           { status: 404 }
         )
       }

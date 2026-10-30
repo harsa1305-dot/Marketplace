@@ -3,8 +3,8 @@ import { Metadata } from 'next'
 import ForgotPasswordForm from './ForgotPasswordForm'
 
 export const metadata: Metadata = {
-  title: 'Lupa Kata Sandi — SkalaShop',
-  description: 'Pembaruan kata sandi akun marketplace SkalaShop',
+  title: 'Lupa Kata Sandi — COD-In',
+  description: 'Pembaruan kata sandi akun marketplace COD-In',
 }
 
 export default function ForgotPasswordPage() {

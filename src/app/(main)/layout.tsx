@@ -81,7 +81,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
         </main>
       </div>
       <footer className="bg-[#121212] border-t border-[#2E2E2E] py-8 text-center text-sm text-neutral-500 mt-12">
-        © 2026 SkalaShop — Belanja &amp; Berjualan Online (Sistem Khusus COD)
+        © 2026 COD-In — Belanja &amp; Berjualan Online (Sistem Khusus COD)
       </footer>
     </div>
   )

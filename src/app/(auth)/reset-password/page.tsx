@@ -3,8 +3,8 @@ import { Metadata } from 'next'
 import ResetPasswordForm from './ResetPasswordForm'
 
 export const metadata: Metadata = {
-  title: 'Atur Ulang Kata Sandi — SkalaShop',
-  description: 'Buat kata sandi baru untuk akun marketplace SkalaShop',
+  title: 'Atur Ulang Kata Sandi — COD-In',
+  description: 'Buat kata sandi baru untuk akun marketplace COD-In',
 }
 
 export default function ResetPasswordPage() {

@@ -2,7 +2,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-export const metadata: Metadata = { title: 'SkalaShop — Akun' }
+export const metadata: Metadata = { title: 'COD-In — Akun' }
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,11 +11,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <Link href="/" className="inline-flex items-center gap-2 text-2xl font-black tracking-tight text-white hover:opacity-95 transition">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25">
-              S
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25 font-black text-xs tracking-tighter">
+              COD
             </span>
             <span className="bg-gradient-to-r from-white via-neutral-200 to-neutral-400 bg-clip-text text-transparent">
-              Skala<span className="text-blue-500">Shop</span>
+              COD<span className="text-blue-500">-In</span>
             </span>
           </Link>
           <p className="text-neutral-400 text-xs sm:text-sm mt-1.5">

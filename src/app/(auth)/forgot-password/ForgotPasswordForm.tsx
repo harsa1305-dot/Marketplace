@@ -229,7 +229,7 @@ export default function ForgotPasswordForm() {
           className={inputClass}
         />
         <p className="text-[11px] text-neutral-400 mt-1">
-          Masukkan email atau nomor HP yang Anda daftarkan di akun SkalaShop.
+          Masukkan email atau nomor HP yang Anda daftarkan di akun COD-In.
         </p>
       </div>
 

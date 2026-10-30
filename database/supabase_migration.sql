@@ -1,5 +1,5 @@
 -- ============================================================
--- SkalaShop - Supabase PostgreSQL Database Schema
+-- COD-In - Supabase PostgreSQL Database Schema
 -- Dapat dieksekusi langsung di Supabase SQL Editor atau DBeaver
 -- Menjamin kompatibilitas 100% dengan Eloquent ORM Laravel
 -- ============================================================
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
     name VARCHAR(100) NOT NULL
 );
 
--- Insert Kategori Bawaan SkalaShop
+-- Insert Kategori Bawaan COD-In
 INSERT INTO public.categories (name) VALUES
     ('Elektronik'),
     ('Fashion'),
