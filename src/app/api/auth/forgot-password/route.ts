@@ -68,7 +68,24 @@ export async function POST(request: Request) {
       targetEmail = userRow.email
     }
 
-    // 3. Tentukan URL redirect setelah klik link di email
+    // Masking email untuk ditampilkan ke pengguna di layar (misal: bu***@gmail.com)
+    const [userPart, domainPart] = targetEmail.split('@')
+    const maskedUser = userPart.length > 2
+      ? userPart.slice(0, 2) + '*'.repeat(Math.max(3, userPart.length - 2))
+      : userPart + '***'
+    const maskedEmail = `${maskedUser}@${domainPart}`
+
+    // 3. Jika hanya lookup / verifikasi akun terdaftar (panggilan reset dilakukan via client SDK)
+    if (body.lookupOnly) {
+      return NextResponse.json({
+        success: true,
+        email: targetEmail,
+        maskedEmail,
+        message: `Akun ditemukan dengan email ${maskedEmail}.`,
+      })
+    }
+
+    // 4. Tentukan URL redirect setelah klik link di email
     // Prioritaskan env var NEXT_PUBLIC_SITE_URL untuk menghindari pengalihan ke vercel.com
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
       || process.env.NEXT_PUBLIC_APP_URL
@@ -76,7 +93,7 @@ export async function POST(request: Request) {
       || 'https://marketplace-beta-lyart.vercel.app'
     const redirectUrl = `${siteUrl}/api/auth/callback?next=/reset-password`
 
-    // 4. Minta Supabase Auth untuk mengirimkan token OTP / tautan reset kata sandi
+    // 5. Minta Supabase Auth untuk mengirimkan token OTP / tautan reset kata sandi
     const { error: resetError } = await adminSupabase.auth.resetPasswordForEmail(targetEmail, {
       redirectTo: redirectUrl,
     })
@@ -87,13 +104,6 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-
-    // Masking email untuk ditampilkan ke pengguna di layar (misal: bu***@gmail.com)
-    const [userPart, domainPart] = targetEmail.split('@')
-    const maskedUser = userPart.length > 2
-      ? userPart.slice(0, 2) + '*'.repeat(Math.max(3, userPart.length - 2))
-      : userPart + '***'
-    const maskedEmail = `${maskedUser}@${domainPart}`
 
     return NextResponse.json({
       success: true,
