@@ -36,7 +36,16 @@ function HomePageContent() {
           .order("name");
 
         if (catsData && catsData.length > 0) {
-          setRawCategories(catsData);
+          const sortedCats = [...catsData].sort((a: any, b: any) => {
+            const nameA = String(a?.name || "").trim();
+            const nameB = String(b?.name || "").trim();
+            const isALainnya = nameA.toLowerCase() === "lainnya";
+            const isBLainnya = nameB.toLowerCase() === "lainnya";
+            if (isALainnya && !isBLainnya) return 1;
+            if (!isALainnya && isBLainnya) return -1;
+            return nameA.localeCompare(nameB, "id", { sensitivity: "base" });
+          });
+          setRawCategories(sortedCats);
         }
 
         // 2. Ambil data produk
@@ -71,20 +80,35 @@ function HomePageContent() {
   }, []);
 
   const uniqueCategories = useMemo(() => {
-    const categories = rawCategories.map((c: any) => c.name || c);
-    return ["Semua", ...Array.from(new Set(categories))];
+    const names = Array.from(
+      new Set(
+        rawCategories
+          .map((c: any) => String(typeof c === "string" ? c : c?.name || "").trim())
+          .filter((name: string) => name.length > 0 && name.toLowerCase() !== "semua")
+      )
+    );
+
+    names.sort((a, b) => {
+      const isALainnya = a.toLowerCase() === "lainnya";
+      const isBLainnya = b.toLowerCase() === "lainnya";
+      if (isALainnya && !isBLainnya) return 1;
+      if (!isALainnya && isBLainnya) return -1;
+      return a.localeCompare(b, "id", { sensitivity: "base" });
+    });
+
+    return ["Semua", ...names];
   }, [rawCategories]);
 
   const filteredProducts = useMemo(() => {
     let result = rawProducts;
     if (selectedCategory !== "Semua") {
       const selectedCatObj = rawCategories.find(
-        (c: any) => (c.name || c) === selectedCategory
+        (c: any) => String(c?.name || c || "").trim() === selectedCategory
       );
       const selectedCatId = selectedCatObj?.id;
       result = result.filter(
         (p: any) =>
-          p.category === selectedCategory ||
+          String(p.category || "").trim() === selectedCategory ||
           (selectedCatId && p.category_id === selectedCatId)
       );
     }
@@ -137,19 +161,20 @@ function HomePageContent() {
       </section>
 
       {/* Kategori Produk */}
-      <section className="mb-10">
-        <h2 className="text-lg font-bold text-white mb-4">Kategori Produk</h2>
-        <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none">
-          {uniqueCategories.map((cat: any, index: number) => {
+      <section className="mb-10 w-full">
+        <h2 className="text-lg font-bold text-white mb-2">Kategori Produk</h2>
+        <div className="w-full flex items-center gap-2.5 overflow-x-auto scroll-smooth py-3 px-1.5 scrollbar-hide no-scrollbar">
+          {uniqueCategories.map((cat: string) => {
             const isActive = selectedCategory === cat;
             return (
               <button
-                key={index}
+                key={cat}
+                type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`whitespace-nowrap rounded-full px-5 py-2 text-xs font-medium transition-all ${
+                className={`flex-shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-xs font-medium transition-all border ${
                   isActive
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25 ring-1 ring-blue-400"
-                    : "border border-[#2E2E2E] bg-[#1E1E1E] text-neutral-400 hover:border-neutral-700 hover:text-white"
+                    ? "border-blue-400 bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-1 ring-blue-400/60"
+                    : "border-[#2E2E2E] bg-[#1E1E1E] text-neutral-400 hover:border-neutral-700 hover:text-white"
                 }`}
               >
                 {cat}

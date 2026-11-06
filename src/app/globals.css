@@ -31,3 +31,19 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #2563EB;
 }
+
+/* Utility untuk menyembunyikan native scrollbar namun tetap bisa di-scroll */
+.scrollbar-hide,
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none; /* IE & Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+  width: 0;
+  height: 0;
+}

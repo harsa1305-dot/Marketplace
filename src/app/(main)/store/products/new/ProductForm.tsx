@@ -1,6 +1,6 @@
 'use client'
 // src/app/(main)/store/products/new/ProductForm.tsx — Form tambah/edit produk
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -40,6 +40,18 @@ export default function ProductForm({ storeId, categories, defaultValues }: Prop
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+
+  const sortedCategories = useMemo(() => {
+    return [...categories].sort((a, b) => {
+      const nameA = (a.name || '').trim()
+      const nameB = (b.name || '').trim()
+      const isALainnya = nameA.toLowerCase() === 'lainnya'
+      const isBLainnya = nameB.toLowerCase() === 'lainnya'
+      if (isALainnya && !isBLainnya) return 1
+      if (!isALainnya && isBLainnya) return -1
+      return nameA.localeCompare(nameB, 'id', { sensitivity: 'base' })
+    })
+  }, [categories])
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value, type } = e.target
@@ -211,7 +223,7 @@ export default function ProductForm({ storeId, categories, defaultValues }: Prop
         <label className={labelClass}>Kategori</label>
         <select name="category_id" value={form.category_id} onChange={handleChange} className={inputClass}>
           <option value="" className="bg-[#121212] text-neutral-400">-- Pilih Kategori --</option>
-          {categories.map(cat => (
+          {sortedCategories.map(cat => (
             <option key={cat.id} value={cat.id} className="bg-[#121212] text-neutral-100">{cat.name}</option>
           ))}
         </select>
