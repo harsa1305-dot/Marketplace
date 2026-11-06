@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { createClient } from "@/lib/supabase/client";
 
@@ -15,6 +15,27 @@ function HomePageContent() {
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Slider kategori
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateSliderArrows = useCallback(() => {
+    const el = sliderRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  function scrollSlider(direction: "left" | "right") {
+    const el = sliderRef.current;
+    if (!el) return;
+    el.scrollBy({
+      left: (direction === "left" ? -1 : 1) * Math.max(el.clientWidth * 0.7, 160),
+      behavior: "smooth",
+    });
+  }
 
   useEffect(() => {
     if (urlSearch) {
@@ -99,6 +120,12 @@ function HomePageContent() {
     return ["Semua", ...names];
   }, [rawCategories]);
 
+  useEffect(() => {
+    updateSliderArrows();
+    window.addEventListener("resize", updateSliderArrows);
+    return () => window.removeEventListener("resize", updateSliderArrows);
+  }, [uniqueCategories, updateSliderArrows]);
+
   const filteredProducts = useMemo(() => {
     let result = rawProducts;
     if (selectedCategory !== "Semua") {
@@ -163,24 +190,58 @@ function HomePageContent() {
       {/* Kategori Produk */}
       <section className="mb-10 w-full">
         <h2 className="text-lg font-bold text-white mb-2">Kategori Produk</h2>
-        <div className="w-full flex items-center gap-2.5 overflow-x-auto scroll-smooth py-3 px-1.5 scrollbar-hide no-scrollbar">
-          {uniqueCategories.map((cat: string) => {
-            const isActive = selectedCategory === cat;
-            return (
+        <div className="relative">
+          {canScrollLeft && (
+            <>
+              <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-r from-[#121212] to-transparent" />
               <button
-                key={cat}
                 type="button"
-                onClick={() => setSelectedCategory(cat)}
-                className={`flex-shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-xs font-medium transition-all border ${
-                  isActive
-                    ? "border-blue-400 bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-1 ring-blue-400/60"
-                    : "border-[#2E2E2E] bg-[#1E1E1E] text-neutral-400 hover:border-neutral-700 hover:text-white"
-                }`}
+                onClick={() => scrollSlider("left")}
+                aria-label="Geser kategori ke kiri"
+                className="absolute left-0 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#2E2E2E] bg-[#1E1E1E] text-neutral-200 shadow-lg hover:border-blue-500/60 hover:text-white transition active:scale-95"
               >
-                {cat}
+                <ChevronLeft className="h-4 w-4" />
               </button>
-            );
-          })}
+            </>
+          )}
+
+          <div
+            ref={sliderRef}
+            onScroll={updateSliderArrows}
+            className="w-full flex items-center gap-2.5 overflow-x-auto scroll-smooth py-3 px-1.5 scrollbar-hide no-scrollbar"
+          >
+            {uniqueCategories.map((cat: string) => {
+              const isActive = selectedCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`flex-shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-xs font-medium transition-all border ${
+                    isActive
+                      ? "border-blue-400 bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-1 ring-blue-400/60"
+                      : "border-[#2E2E2E] bg-[#1E1E1E] text-neutral-400 hover:border-neutral-700 hover:text-white"
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+
+          {canScrollRight && (
+            <>
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-l from-[#121212] to-transparent" />
+              <button
+                type="button"
+                onClick={() => scrollSlider("right")}
+                aria-label="Geser kategori ke kanan"
+                className="absolute right-0 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#2E2E2E] bg-[#1E1E1E] text-neutral-200 shadow-lg hover:border-blue-500/60 hover:text-white transition active:scale-95"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </>
+          )}
         </div>
       </section>
 
