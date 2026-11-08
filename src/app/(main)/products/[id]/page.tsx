@@ -1,9 +1,58 @@
 // src/app/(main)/products/[id]/page.tsx — Halaman Detail Produk
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import AddToCartButton from './AddToCartButton'
 import ReviewForm from './ReviewForm'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+
+  const { data: product } = await supabase
+    .from('products')
+    .select('name, description, price, image, stores ( name )')
+    .eq('id', Number(id))
+    .eq('is_active', true)
+    .maybeSingle() as {
+      data: {
+        name: string
+        description: string | null
+        price: number
+        image: string | null
+        stores: { name: string } | null
+      } | null
+    }
+
+  if (!product) {
+    return { title: 'Produk Tidak Ditemukan' }
+  }
+
+  const formattedPrice = `Rp ${Number(product.price).toLocaleString('id-ID')}`
+  const storeName = product.stores?.name ? ` • ${product.stores.name}` : ''
+  const title = `${product.name} (${formattedPrice})`
+  const desc = product.description
+    ? `${product.description.slice(0, 140)} | Transaksi COD Direct di COD-In${storeName}`
+    : `Beli ${product.name} seharga ${formattedPrice} secara COD ketemuan langsung di COD-In${storeName}.`
+
+  return {
+    title,
+    description: desc,
+    openGraph: {
+      title: `${product.name} — ${formattedPrice}`,
+      description: desc,
+      url: `https://codin.web.id/products/${id}`,
+      siteName: 'COD-In',
+      type: 'website',
+      ...(product.image ? { images: [{ url: product.image, alt: product.name }] } : {}),
+    },
+  }
+}
 
 export default async function ProductDetailPage({
   params,

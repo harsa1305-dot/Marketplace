@@ -25,11 +25,14 @@ export default function SellerProductList({ initialProducts }: Props) {
   const [products, setProducts] = useState<ProductItem[]>(initialProducts)
   const [restockId, setRestockId] = useState<number | null>(null)
   const [addQty, setAddQty] = useState<number>(10)
+  const [notifyWa, setNotifyWa] = useState<boolean>(true)
   const [loadingId, setLoadingId] = useState<number | null>(null)
   const [msg, setMsg] = useState<{ id: number; text: string; error?: boolean } | null>(null)
 
-  async function handleQuickRestock(productId: number, currentStock: number) {
+  async function handleQuickRestock(product: ProductItem) {
     if (addQty <= 0) return
+    const productId = product.id
+    const currentStock = product.stock
     setLoadingId(productId)
     setMsg(null)
 
@@ -47,9 +50,32 @@ export default function SellerProductList({ initialProducts }: Props) {
         prev.map((p) => (p.id === productId ? { ...p, stock: newStock } : p))
       )
 
+      let waSuffix = ''
+      if (notifyWa && product.is_active && newStock > 0) {
+        try {
+          const waRes = await fetch('/api/notify/whatsapp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              productId,
+              eventType: 'restock',
+              addedQty: addQty,
+            }),
+          })
+          const waJson = await waRes.json().catch(() => ({}))
+          if (waJson?.success) {
+            waSuffix = ' • 📢 Notif restok terkirim ke Grup WA'
+          } else if (waJson?.reason && !waJson?.skipped) {
+            waSuffix = ` • (Info WA tertunda: ${waJson.reason})`
+          }
+        } catch {
+          waSuffix = ' • (Notif WA gagal terhubung)'
+        }
+      }
+
       setMsg({
         id: productId,
-        text: `✅ Berhasil restock! Stok bertambah +${addQty} (Total: ${newStock})`,
+        text: `✅ Berhasil restock! Stok bertambah +${addQty} (Total: ${newStock})${waSuffix}`,
       })
       setRestockId(null)
       router.refresh()
@@ -163,6 +189,7 @@ export default function SellerProductList({ initialProducts }: Props) {
                     onClick={() => {
                       setRestockId(isRestocking ? null : p.id)
                       setAddQty(10)
+                      setNotifyWa(isSoldOut)
                       setMsg(null)
                     }}
                     className={`text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors flex items-center gap-1 ${
@@ -198,53 +225,70 @@ export default function SellerProductList({ initialProducts }: Props) {
 
               {/* Panel Quick Restock Form */}
               {isRestocking && (
-                <div className="mt-3 pt-3 border-t border-[#2E2E2E] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#1E1E1E] p-3 rounded-xl border border-[#2E2E2E]">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-neutral-300 font-semibold">Tambah Stok Sebanyak:</span>
-                    {[5, 10, 25, 50, 100].map((qty) => (
-                      <button
-                        key={qty}
-                        type="button"
-                        onClick={() => setAddQty(qty)}
-                        className={`text-xs px-2.5 py-1 rounded-lg border transition-colors font-medium ${
-                          addQty === qty
-                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                            : 'bg-[#121212] text-neutral-300 border-[#2E2E2E] hover:border-blue-500/50'
-                        }`}
-                      >
-                        +{qty}
-                      </button>
-                    ))}
+                <div className="mt-3 pt-3 border-t border-[#2E2E2E] flex flex-col gap-3 bg-[#1E1E1E] p-3 rounded-xl border border-[#2E2E2E]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-neutral-300 font-semibold">Tambah Stok Sebanyak:</span>
+                      {[5, 10, 25, 50, 100].map((qty) => (
+                        <button
+                          key={qty}
+                          type="button"
+                          onClick={() => setAddQty(qty)}
+                          className={`text-xs px-2.5 py-1 rounded-lg border transition-colors font-medium ${
+                            addQty === qty
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                              : 'bg-[#121212] text-neutral-300 border-[#2E2E2E] hover:border-blue-500/50'
+                          }`}
+                        >
+                          +{qty}
+                        </button>
+                      ))}
 
-                    <div className="flex items-center gap-1 border border-[#2E2E2E] rounded-lg px-2 py-0.5 bg-[#121212]">
-                      <span className="text-xs text-neutral-400">Custom:</span>
-                      <input
-                        type="number"
-                        min="1"
-                        value={addQty}
-                        onChange={(e) => setAddQty(Math.max(1, parseInt(e.target.value) || 1))}
-                        className="w-16 text-xs font-bold text-neutral-100 bg-transparent focus:outline-none"
-                      />
+                      <div className="flex items-center gap-1 border border-[#2E2E2E] rounded-lg px-2 py-0.5 bg-[#121212]">
+                        <span className="text-xs text-neutral-400">Custom:</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={addQty}
+                          onChange={(e) => setAddQty(Math.max(1, parseInt(e.target.value) || 1))}
+                          className="w-16 text-xs font-bold text-neutral-100 bg-transparent focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleQuickRestock(p)}
+                        disabled={isLoading}
+                        className="text-xs bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl transition-colors shadow-sm"
+                      >
+                        {isLoading ? '⏳ Menyimpan...' : `✓ Simpan (+${addQty} Stok)`}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRestockId(null)}
+                        className="text-xs text-neutral-400 hover:text-neutral-200 px-2"
+                      >
+                        Batal
+                      </button>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickRestock(p.id, p.stock)}
-                      disabled={isLoading}
-                      className="text-xs bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl transition-colors shadow-sm"
-                    >
-                      {isLoading ? '⏳ Menyimpan...' : `✓ Simpan (+${addQty} Stok)`}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRestockId(null)}
-                      className="text-xs text-neutral-400 hover:text-neutral-200 px-2"
-                    >
-                      Batal
-                    </button>
-                  </div>
+                  {p.is_active && (
+                    <label className="flex items-center gap-2 text-xs text-neutral-300 cursor-pointer pt-1 border-t border-[#2E2E2E]/60">
+                      <input
+                        type="checkbox"
+                        checked={notifyWa}
+                        onChange={(e) => setNotifyWa(e.target.checked)}
+                        className="w-3.5 h-3.5 accent-emerald-500"
+                      />
+                      <span>
+                        📢 Kirim notifikasi restok ke Grup WhatsApp COD-In
+                        {isSoldOut ? ' (Otomatis aktif karena sebelumnya habis)' : ''}
+                      </span>
+                    </label>
+                  )}
                 </div>
               )}
 

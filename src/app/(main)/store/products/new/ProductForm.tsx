@@ -27,6 +27,7 @@ export default function ProductForm({ storeId, categories, defaultValues }: Prop
   const router   = useRouter()
   const supabase = createClient()
   const isEdit   = !!defaultValues
+  const wasOutOfStock = isEdit ? Number(defaultValues.stock) <= 0 : false
 
   const [form, setForm] = useState({
     name:        defaultValues?.name        ?? '',
@@ -37,6 +38,7 @@ export default function ProductForm({ storeId, categories, defaultValues }: Prop
     is_active:   defaultValues?.is_active   ?? true,
   })
   const [imageUrl,  setImageUrl]  = useState(defaultValues?.image ?? '')
+  const [notifyWa,  setNotifyWa]  = useState(!isEdit || wasOutOfStock)
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -135,16 +137,47 @@ export default function ProductForm({ storeId, categories, defaultValues }: Prop
       is_active:   form.is_active,
     }
 
+    let savedProductId: number | null = defaultValues?.id ?? null
     let err = null
+    let waEventType: 'new_product' | 'restock' | null = null
+
     if (isEdit && defaultValues) {
       const { error } = await supabase.from('products').update(payload).eq('id', defaultValues.id)
       err = error
+      if (!err && notifyWa && payload.is_active && payload.stock > 0) {
+        waEventType = 'restock'
+      }
     } else {
-      const { error } = await supabase.from('products').insert(payload)
+      const { data: inserted, error } = await supabase
+        .from('products')
+        .insert(payload)
+        .select('id')
+        .single() as { data: { id: number } | null; error: any }
       err = error
+      savedProductId = inserted?.id ?? null
+      if (!err && notifyWa && payload.is_active && payload.stock > 0) {
+        waEventType = 'new_product'
+      }
     }
 
     if (err) { setError(err.message); setLoading(false); return }
+
+    // Kirim notifikasi ke Grup WhatsApp (non-blocking terhadap penyimpanan produk)
+    if (savedProductId && waEventType) {
+      try {
+        await fetch('/api/notify/whatsapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productId: savedProductId,
+            eventType: waEventType,
+          }),
+        })
+      } catch (notifyErr) {
+        console.warn('Gagal memicu notifikasi WhatsApp:', notifyErr)
+      }
+    }
+
     router.push('/store')
     router.refresh()
   }
@@ -230,14 +263,36 @@ export default function ProductForm({ storeId, categories, defaultValues }: Prop
       </div>
 
       {/* Status aktif */}
-      <div className="flex items-center gap-3">
-        <input type="checkbox" id="is_active" name="is_active"
-          checked={form.is_active}
-          onChange={e => setForm(prev => ({ ...prev, is_active: e.target.checked }))}
-          className="w-4 h-4 accent-blue-600" />
-        <label htmlFor="is_active" className="text-sm text-neutral-300">
-          Produk aktif (tampil di toko &amp; bisa dibeli)
-        </label>
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <input type="checkbox" id="is_active" name="is_active"
+            checked={form.is_active}
+            onChange={e => setForm(prev => ({ ...prev, is_active: e.target.checked }))}
+            className="w-4 h-4 accent-blue-600" />
+          <label htmlFor="is_active" className="text-sm text-neutral-300">
+            Produk aktif (tampil di toko &amp; bisa dibeli)
+          </label>
+        </div>
+
+        {/* Notifikasi Grup WhatsApp */}
+        <div className="flex items-start gap-3 rounded-xl border border-[#2E2E2E] bg-[#121212]/70 p-3">
+          <input
+            type="checkbox"
+            id="notify_wa"
+            checked={notifyWa}
+            disabled={!form.is_active || Number(form.stock) <= 0}
+            onChange={e => setNotifyWa(e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-emerald-500 disabled:opacity-40"
+          />
+          <label htmlFor="notify_wa" className="text-xs text-neutral-300 leading-relaxed cursor-pointer">
+            <span className="font-semibold text-emerald-400">
+              {isEdit ? '📢 Kabari restok produk ke Grup WhatsApp' : '📢 Umumkan produk baru ke Grup WhatsApp'}
+            </span>
+            <span className="block text-neutral-400 mt-0.5">
+              Pembeli di grup WA COD-In akan otomatis menerima info &amp; link produk ini (aktif jika stok &gt; 0 dan status aktif).
+            </span>
+          </label>
+        </div>
       </div>
 
       {error && <p className="text-rose-400 text-sm bg-rose-950/30 border border-rose-800/40 p-3 rounded-lg">{error}</p>}
