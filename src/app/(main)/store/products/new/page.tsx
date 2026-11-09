@@ -14,12 +14,11 @@ export default async function NewProductPage() {
     { data: { id: number } | null; error: unknown }
   if (!profile) redirect('/login')
 
-  const { data: store } = await supabase
-    .from('stores').select('id, name').eq('user_id', profile.id).maybeSingle()
+  const [{ data: store }, { data: categories }] = await Promise.all([
+    supabase.from('stores').select('id, name').eq('user_id', profile.id).maybeSingle(),
+    supabase.from('categories').select('id, name').order('name'),
+  ])
   if (!store) redirect('/store')
-
-  const { data: categories } = await supabase
-    .from('categories').select('id, name').order('name')
 
   return (
     <div className="max-w-2xl mx-auto">

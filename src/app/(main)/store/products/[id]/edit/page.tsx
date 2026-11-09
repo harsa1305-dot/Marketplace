@@ -19,8 +19,10 @@ export default async function EditProductPage({
     { data: { id: number } | null; error: unknown }
   if (!profile) redirect('/login')
 
-  const { data: store } = await supabase
-    .from('stores').select('id').eq('user_id', profile.id).maybeSingle()
+  const [{ data: store }, { data: categories }] = await Promise.all([
+    supabase.from('stores').select('id, name').eq('user_id', profile.id).maybeSingle(),
+    supabase.from('categories').select('id, name').order('name'),
+  ])
   if (!store) redirect('/store')
 
   const { data: product, error } = await supabase
@@ -31,9 +33,6 @@ export default async function EditProductPage({
     .single()
 
   if (error || !product) notFound()
-
-  const { data: categories } = await supabase
-    .from('categories').select('id, name').order('name')
 
   return (
     <div className="max-w-2xl mx-auto">

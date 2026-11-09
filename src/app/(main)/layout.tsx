@@ -21,36 +21,38 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     profile = p
 
     if (profile) {
-      // 1. Jumlah item keranjang
-      const { count: cCount } = await supabase
-        .from('cart')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', profile.id)
-      cartCount = cCount ?? 0
+      // 1 & 2. Ambil jumlah item keranjang & data toko secara paralel
+      const [{ count: cCount }, { data: st }] = await Promise.all([
+        supabase
+          .from('cart')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', profile.id),
+        supabase
+          .from('stores')
+          .select('id, name')
+          .eq('user_id', profile.id)
+          .maybeSingle(),
+      ])
 
-      // 2. Cek apakah user memiliki toko
-      const { data: st } = await supabase
-        .from('stores')
-        .select('id, name')
-        .eq('user_id', profile.id)
-        .maybeSingle()
+      cartCount = cCount ?? 0
       store = st
 
-      // 3. Jumlah pesanan baru masuk untuk toko (status = pending)
-      if (store) {
-        const { count: oCount } = await supabase
-          .from('orders')
-          .select('id', { count: 'exact', head: true })
-          .eq('store_id', store.id)
-          .eq('status', 'pending')
-        initialPendingOrders = oCount ?? 0
-      }
+      // 3 & 4. Ambil jumlah pesanan baru toko & daftar ruang chat secara paralel
+      const [ordersRes, { data: myChats }] = await Promise.all([
+        store
+          ? supabase
+              .from('orders')
+              .select('id', { count: 'exact', head: true })
+              .eq('store_id', store.id)
+              .eq('status', 'pending')
+          : Promise.resolve({ count: 0 }),
+        supabase
+          .from('chats')
+          .select('id')
+          .or(store ? `buyer_id.eq.${profile.id},store_id.eq.${store.id}` : `buyer_id.eq.${profile.id}`),
+      ])
 
-      // 4. Jumlah pesan chat yang belum dibaca (is_read = false)
-      const { data: myChats } = await supabase
-        .from('chats')
-        .select('id')
-        .or(store ? `buyer_id.eq.${profile.id},store_id.eq.${store.id}` : `buyer_id.eq.${profile.id}`)
+      initialPendingOrders = ordersRes.count ?? 0
 
       if (myChats && myChats.length > 0) {
         const chatIds = myChats.map((c: any) => c.id)

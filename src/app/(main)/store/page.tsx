@@ -36,19 +36,20 @@ export default async function StoreDashboardPage() {
     )
   }
 
-  // Sudah punya toko — tampilkan dashboard
-  const { data: products } = await supabase
-    .from('products')
-    .select('id, name, price, stock, is_active, image')
-    .eq('store_id', store.id)
-    .order('created_at', { ascending: false })
-
-  const { data: orders } = await supabase
-    .from('orders')
-    .select('id, status, total_price, created_at')
-    .eq('store_id', store.id)
-    .order('created_at', { ascending: false })
-    .limit(5)
+  // Sudah punya toko — ambil produk & pesanan secara paralel
+  const [{ data: products }, { data: orders }] = await Promise.all([
+    supabase
+      .from('products')
+      .select('id, name, price, stock, is_active, image')
+      .eq('store_id', store.id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('orders')
+      .select('id, status, total_price, created_at')
+      .eq('store_id', store.id)
+      .order('created_at', { ascending: false })
+      .limit(5),
+  ])
 
   const totalRevenue = (orders as any[] ?? [])
     .filter((o: any) => o.status === 'completed')

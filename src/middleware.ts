@@ -18,6 +18,23 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://zwnphrmqpxdyfdrjlnyt.supabase.co'
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_drd33tK4O6w7j-07FIHk4g_9cccRRwv'
 
+  const { pathname } = request.nextUrl
+  // Halaman etalase toko publik (/store/[id]) dapat dilihat oleh siapa saja tanpa login
+  const isPublicStorePage = /^\/store\/\d+$/.test(pathname)
+  const isProtected = !isPublicStorePage && PROTECTED_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'))
+  const isAuthRoute = AUTH_ROUTES.some(r => pathname.startsWith(r))
+
+  // Jika tidak ada cookie sesi Supabase sama sekali, lewati network call getUser()
+  const hasSupabaseCookie = request.cookies.getAll().some(c => c.name.startsWith('sb-'))
+  if (!hasSupabaseCookie) {
+    if (isProtected) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+    return response
+  }
+
   try {
     const supabase = createServerClient(
       supabaseUrl,
@@ -41,18 +58,13 @@ export async function middleware(request: NextRequest) {
     )
 
     const { data: { user } } = await supabase.auth.getUser()
-    const { pathname } = request.nextUrl
 
-    // Halaman etalase toko publik (/store/[id]) dapat dilihat oleh siapa saja tanpa login
-    const isPublicStorePage = /^\/store\/\d+$/.test(pathname)
-    const isProtected = !isPublicStorePage && PROTECTED_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'))
     if (isProtected && !user) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     }
 
-    const isAuthRoute = AUTH_ROUTES.some(r => pathname.startsWith(r))
     if (isAuthRoute && user) {
       return NextResponse.redirect(new URL('/', request.url))
     }

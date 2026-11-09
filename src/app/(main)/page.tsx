@@ -50,11 +50,11 @@ function HomePageContent() {
       try {
         setIsLoading(true);
 
-        // 1. Ambil daftar kategori
-        const { data: catsData } = await supabase
-          .from("categories")
-          .select("id, name")
-          .order("name");
+        // 1 & 2. Ambil daftar kategori dan data produk secara paralel
+        const [{ data: catsData }, { data, error }] = await Promise.all([
+          supabase.from("categories").select("id, name").order("name"),
+          supabase.from("products").select("*").eq("is_active", true),
+        ]);
 
         if (catsData && catsData.length > 0) {
           const sortedCats = [...catsData].sort((a: any, b: any) => {
@@ -68,12 +68,6 @@ function HomePageContent() {
           });
           setRawCategories(sortedCats);
         }
-
-        // 2. Ambil data produk
-        const { data, error } = await supabase
-          .from("products")
-          .select("*")
-          .eq("is_active", true);
 
         if (error) throw error;
 

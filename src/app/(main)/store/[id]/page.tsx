@@ -11,20 +11,22 @@ export default async function PublicStorePage({
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: store, error } = await supabase
-    .from('stores')
-    .select('id, name, description, logo, address')
-    .eq('id', Number(id))
-    .single()
+  const storeId = Number(id)
+  const [{ data: store, error }, { data: products }] = await Promise.all([
+    supabase
+      .from('stores')
+      .select('id, name, description, logo, address')
+      .eq('id', storeId)
+      .single(),
+    supabase
+      .from('products')
+      .select('id, name, price, image, stock')
+      .eq('store_id', storeId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false }),
+  ])
 
   if (error || !store) notFound()
-
-  const { data: products } = await supabase
-    .from('products')
-    .select('id, name, price, image, stock')
-    .eq('store_id', store.id)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
 
   return (
     <div>
