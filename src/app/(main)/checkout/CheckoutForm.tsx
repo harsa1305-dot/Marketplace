@@ -88,6 +88,7 @@ export default function CheckoutForm({ userId, cartItems, total, defaultName, de
       }
 
       // Buat order per toko (sesuai alur marketplace)
+      const createdOrderIds: number[] = []
       for (const [storeIdStr, items] of Object.entries(storeGroups)) {
         const storeId = Number(storeIdStr)
         const storeTotal = items.reduce((s, i) => s + Number(i.products.price) * Number(i.quantity), 0)
@@ -112,6 +113,8 @@ export default function CheckoutForm({ userId, cartItems, total, defaultName, de
           throw new Error(orderErr?.message ?? 'Gagal membuat pesanan')
         }
 
+        createdOrderIds.push(Number(order.id))
+
         // 2. Insert order items
         const orderItems = items.map(i => ({
           order_id:   Number(order.id),
@@ -128,6 +131,19 @@ export default function CheckoutForm({ userId, cartItems, total, defaultName, de
 
       // 3. Kosongkan keranjang
       await supabase.from('cart').delete().eq('user_id', userId)
+
+      // 4. Kirim notifikasi WhatsApp Japri ke Penjual & Pembeli (non-blocking)
+      if (createdOrderIds.length > 0) {
+        await Promise.allSettled(
+          createdOrderIds.map((orderId) =>
+            fetch('/api/notify/order', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderId, eventType: 'new_order' }),
+            })
+          )
+        )
+      }
 
       router.push('/orders?success=1')
     } catch (err: unknown) {

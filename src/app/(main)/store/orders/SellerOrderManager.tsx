@@ -78,10 +78,32 @@ export default function SellerOrderManager({ initialOrders }: { initialOrders: O
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       )
 
+      // Kirim notifikasi update status pesanan ke WhatsApp Pembeli (non-blocking)
+      let waSuffix = ''
+      if (newStatus !== 'pending') {
+        try {
+          const waRes = await fetch('/api/notify/order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId,
+              eventType: 'status_update',
+              status: newStatus,
+            }),
+          })
+          const waJson = await waRes.json().catch(() => ({}))
+          if (waJson?.success) {
+            waSuffix = ' • 💬 Notifikasi WA terkirim ke pembeli'
+          }
+        } catch {
+          // Non-blocking jika Fonnte sedang offline
+        }
+      }
+
       if (newStatus === 'cancelled') {
-        setSuccessMsg(`Pesanan #${orderId} dibatalkan. Stok produk dikembalikan secara otomatis ke katalog toko.`)
+        setSuccessMsg(`Pesanan #${orderId} dibatalkan. Stok produk dikembalikan secara otomatis ke katalog toko.${waSuffix}`)
       } else {
-        setSuccessMsg(`Status pesanan #${orderId} berhasil diubah menjadi "${newStatus}".`)
+        setSuccessMsg(`Status pesanan #${orderId} berhasil diubah menjadi "${newStatus}".${waSuffix}`)
       }
       setTimeout(() => setSuccessMsg(null), 4000)
       router.refresh()
