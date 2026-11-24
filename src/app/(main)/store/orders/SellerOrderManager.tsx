@@ -35,7 +35,7 @@ interface Order {
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending: { label: 'Menunggu', color: 'bg-amber-950/40 text-amber-400 border-amber-800/40' },
   processing: { label: 'Diproses', color: 'bg-blue-950/40 text-blue-400 border-blue-800/40' },
-  shipped: { label: 'Dikirim', color: 'bg-purple-950/40 text-purple-400 border-purple-800/40' },
+  shipped: { label: 'Menuju Lokasi', color: 'bg-purple-950/40 text-purple-400 border-purple-800/40' },
   completed: { label: 'Selesai', color: 'bg-emerald-950/40 text-emerald-400 border-emerald-800/40' },
   cancelled: { label: 'Dibatalkan', color: 'bg-rose-950/40 text-rose-400 border-rose-800/40' },
 }
@@ -122,7 +122,7 @@ export default function SellerOrderManager({ initialOrders }: { initialOrders: O
           { key: 'all', label: 'Semua' },
           { key: 'pending', label: 'Menunggu' },
           { key: 'processing', label: 'Diproses' },
-          { key: 'shipped', label: 'Dikirim' },
+          { key: 'shipped', label: 'Menuju Lokasi' },
           { key: 'completed', label: 'Selesai' },
           { key: 'cancelled', label: 'Dibatalkan' },
         ].map((tab) => {
@@ -218,7 +218,7 @@ export default function SellerOrderManager({ initialOrders }: { initialOrders: O
                     )}
                   </div>
                   <div>
-                    <p className="text-neutral-400 mb-0.5">Alamat Pengiriman (COD):</p>
+                    <p className="text-neutral-400 mb-0.5">Titik Pertemuan COD:</p>
                     <p className="text-neutral-200 leading-relaxed whitespace-pre-line">
                       {order.shipping_address}
                     </p>
@@ -296,7 +296,7 @@ export default function SellerOrderManager({ initialOrders }: { initialOrders: O
                         disabled={isUpdating}
                         className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
                       >
-                        {isUpdating ? '⏳...' : '🚚 Kirim Pesanan'}
+                        {isUpdating ? '⏳...' : '🛵 Menuju Lokasi COD'}
                       </button>
                     )}
 
@@ -319,7 +319,7 @@ export default function SellerOrderManager({ initialOrders }: { initialOrders: O
                     >
                       <option value="pending">Menunggu</option>
                       <option value="processing">Diproses</option>
-                      <option value="shipped">Dikirim</option>
+                      <option value="shipped">Menuju Lokasi</option>
                       <option value="completed">Selesai</option>
                       <option value="cancelled">Dibatalkan</option>
                     </select>

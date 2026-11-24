@@ -7,22 +7,22 @@ const STATUS_MAP: Record<string, { label: string; color: string; desc: string }>
   pending: {
     label: 'Menunggu Konfirmasi',
     color: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-    desc: 'Pesanan telah dibuat dan sedang menunggu konfirmasi penjual.',
+    desc: 'Pesanan telah dibuat dan sedang menunggu konfirmasi jadwal ketemuan dari penjual.',
   },
   processing: {
-    label: 'Sedang Diproses',
+    label: 'Siap Ketemuan COD',
     color: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-    desc: 'Penjual sedang menyiapkan dan mengemas pesananmu.',
+    desc: 'Penjual telah menyetujui pesanan dan sedang menyiapkan barang untuk ketemuan COD.',
   },
   shipped: {
-    label: 'Dalam Pengiriman',
+    label: 'Menuju Lokasi COD',
     color: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
-    desc: 'Pesanan sedang dikirim ke alamat tujuan oleh kurir COD.',
+    desc: 'Penjual sedang menuju ke titik pertemuan COD yang telah disepakati.',
   },
   completed: {
     label: 'Selesai',
     color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-    desc: 'Pesanan telah berhasil diterima dan transaksi COD selesai.',
+    desc: 'Pertemuan dan transaksi COD telah selesai. Terima kasih!',
   },
   cancelled: {
     label: 'Dibatalkan',
@@ -219,10 +219,10 @@ export default async function OrderDetailPage({
             </div>
           </div>
 
-          {/* Pengiriman & Pembayaran */}
+          {/* Titik Temu & Pembayaran COD */}
           <div className="bg-[#1E1E1E] border border-[#2E2E2E] rounded-2xl p-5 shadow-sm space-y-3">
             <h3 className="font-bold text-white mb-2 flex items-center gap-2 text-sm">
-              <span>🚚</span> Pengiriman &amp; Pembayaran
+              <span>📍</span> Titik Temu &amp; Pembayaran COD
             </h3>
             <div className="space-y-3 text-sm">
               <div>
@@ -232,7 +232,7 @@ export default async function OrderDetailPage({
                 </span>
               </div>
               <div>
-                <span className="text-xs text-neutral-400 block">Alamat Tujuan</span>
+                <span className="text-xs text-neutral-400 block">Titik Pertemuan COD</span>
                 <p className="text-xs text-neutral-200 mt-0.5 whitespace-pre-line leading-relaxed">
                   {orderData.shipping_address}
                 </p>

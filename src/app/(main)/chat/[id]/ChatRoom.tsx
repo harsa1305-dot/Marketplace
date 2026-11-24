@@ -139,7 +139,7 @@ export default function ChatRoom({ chatId, buyerId, currentUser, store, buyer, i
       <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-[11px] text-amber-300 flex items-center gap-2">
         <span className="text-base flex-shrink-0">ℹ️</span>
         <span className="leading-tight">
-          <strong>Mode Transaksi COD:</strong> Gunakan chat ini untuk konfirmasi pesanan, patokan alamat kurir, dan kepastian uang pas saat paket tiba.
+          <strong>Mode Transaksi COD Direct:</strong> Gunakan chat ini untuk menyepakati titik temu, jadwal ketemuan, dan menyiapkan uang pas saat transaksi.
         </span>
       </div>
 
@@ -192,10 +192,10 @@ export default function ChatRoom({ chatId, buyerId, currentUser, store, buyer, i
       <div className="px-3 py-2 bg-[#181818] border-t border-[#2E2E2E] flex items-center gap-1.5 overflow-x-auto text-[11px] whitespace-nowrap scrollbar-none">
         <span className="text-neutral-500 font-medium">Template COD:</span>
         {[
-          '📦 Apakah pesanan COD saya siap dikirim?',
-          '📍 Alamat pengiriman saya sudah lengkap ya.',
-          '💵 Uang pas COD sudah saya siapkan.',
-          '🚚 Kapan estimasi kurir sampai di lokasi?',
+          '📦 Apakah barangnya masih ready untuk COD?',
+          '📍 Bisa ketemuan COD di titik temu mana kak?',
+          '🕒 Kira-kira jam berapa bisa ketemuan COD?',
+          '💵 Uang pas COD sudah saya siapkan ya.',
         ].map((t) => (
           <button
             key={t}

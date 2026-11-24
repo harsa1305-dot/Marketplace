@@ -4,11 +4,11 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  pending:    { label: 'Menunggu',    color: 'bg-amber-500/10 text-amber-400 border border-amber-500/30' },
-  processing: { label: 'Diproses',   color: 'bg-blue-500/10 text-blue-400 border border-blue-500/30' },
-  shipped:    { label: 'Dikirim',    color: 'bg-purple-500/10 text-purple-400 border border-purple-500/30' },
-  completed:  { label: 'Selesai',    color: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' },
-  cancelled:  { label: 'Dibatalkan', color: 'bg-red-500/10 text-red-400 border border-red-500/30' },
+  pending:    { label: 'Menunggu',          color: 'bg-amber-500/10 text-amber-400 border border-amber-500/30' },
+  processing: { label: 'Diproses',         color: 'bg-blue-500/10 text-blue-400 border border-blue-500/30' },
+  shipped:    { label: 'Menuju Lokasi COD', color: 'bg-purple-500/10 text-purple-400 border border-purple-500/30' },
+  completed:  { label: 'Selesai',          color: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' },
+  cancelled:  { label: 'Dibatalkan',       color: 'bg-red-500/10 text-red-400 border border-red-500/30' },
 }
 
 export default async function OrdersPage({
@@ -45,7 +45,7 @@ export default async function OrdersPage({
 
       {params.success && (
         <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-400 text-sm">
-          ✅ Pesanan COD berhasil dibuat! Penjual akan segera memproses dan mengantarkan paket Anda.
+          ✅ Pesanan COD berhasil dibuat! Penjual akan segera mengonfirmasi jadwal dan lokasi ketemuan COD Anda.
         </div>
       )}
 

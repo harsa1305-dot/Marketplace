@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Truck } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 interface ProductProps {
   id: string | number;
@@ -27,8 +27,8 @@ export default function ProductCard({ product }: { product: ProductProps }) {
           }`}
         />
         <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-neutral-950/80 px-2.5 py-1 text-[10px] font-medium text-emerald-400 backdrop-blur-md border border-emerald-500/20">
-          <Truck className="h-3 w-3" />
-          <span>Bayar COD</span>
+          <MapPin className="h-3 w-3" />
+          <span>COD Ketemuan</span>
         </div>
         {isSoldOut && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">

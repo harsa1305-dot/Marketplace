@@ -43,7 +43,7 @@ export default function CheckoutForm({ userId, cartItems, total, defaultName, de
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!address.trim()) { setError('Alamat pengiriman wajib diisi.'); return }
+    if (!address.trim()) { setError('Lokasi / Titik Temu COD wajib diisi.'); return }
 
     setLoading(true)
     setError(null)
@@ -154,16 +154,16 @@ export default function CheckoutForm({ userId, cartItems, total, defaultName, de
 
   return (
     <form onSubmit={handleSubmit} className="bg-[#1E1E1E] rounded-xl border border-[#2E2E2E] p-5 space-y-4">
-      <h2 className="font-semibold text-neutral-200">Data Pengiriman</h2>
+      <h2 className="font-semibold text-neutral-200">Titik Pertemuan COD</h2>
 
       <div>
         <label className="block text-sm font-medium text-neutral-300 mb-1">
-          Alamat Pengiriman Lengkap <span className="text-red-500">*</span>
+          Lokasi / Titik Temu COD <span className="text-red-500">*</span>
         </label>
         <textarea
           value={address}
           onChange={e => setAddress(e.target.value)}
-          placeholder="Masukkan alamat lengkap termasuk RT/RW, kelurahan, kecamatan, kota, dan kode pos..."
+          placeholder="Contoh: Depan Indomaret Kampus, Lobby Stasiun, atau patokan lokasi ketemuan..."
           required
           rows={3}
           className="w-full px-4 py-3 bg-[#121212] border border-[#2E2E2E] text-neutral-100 placeholder-neutral-500 rounded-xl focus:outline-none focus:border-blue-500 text-sm resize-none"
@@ -171,12 +171,12 @@ export default function CheckoutForm({ userId, cartItems, total, defaultName, de
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-neutral-300 mb-1">Catatan (opsional)</label>
+        <label className="block text-sm font-medium text-neutral-300 mb-1">Catatan Ketemuan (opsional)</label>
         <input
           type="text"
           value={notes}
           onChange={e => setNotes(e.target.value)}
-          placeholder="cth: titip di depan pintu"
+          placeholder="cth: Ketemuan jam 4 sore, saya pakai jaket hitam"
           className="w-full px-4 py-3 bg-[#121212] border border-[#2E2E2E] text-neutral-100 placeholder-neutral-500 rounded-xl focus:outline-none focus:border-blue-500 text-sm"
         />
       </div>
@@ -186,8 +186,8 @@ export default function CheckoutForm({ userId, cartItems, total, defaultName, de
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-emerald-900/30 rounded-full flex items-center justify-center text-xl">💵</div>
           <div>
-            <p className="font-medium text-emerald-400 text-sm">Bayar di Tempat (COD)</p>
-            <p className="text-xs text-emerald-400/80">Bayar saat barang tiba di tangan kamu</p>
+            <p className="font-medium text-emerald-400 text-sm">Bayar di Tempat (COD Direct)</p>
+            <p className="text-xs text-emerald-400/80">Bayar tunai langsung saat ketemuan dengan penjual</p>
           </div>
         </div>
       </div>
